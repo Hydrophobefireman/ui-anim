@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UI-Anim Demo/Test</title>
+    <style>
+      #app {
+        margin: auto;
+        text-align: center;
+      }
+      .mob {
+        margin: auto;
+        height: 400px;
+        width: 200px;
+        border: 2px solid;
+        margin-top: 50px;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .component {
+        flex: 1;
+        border-radius: 20px;
+        cursor: pointer;
+        position: relative;
+      }
+      .bottom-bar {
+        position: absolute;
+        bottom: 0px;
+        width: 100%;
+        height: 20%;
+        background: black;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+      }
+      .prof {
+        margin-left: 10px;
+        height: 20px;
+        width: 20px;
+        background-color: red;
+        margin-top: 5px;
+      }
+      .prof.active {
+        height: 50px;
+        width: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./mobilescreen.js"></script>
+  </body>
+</html>
