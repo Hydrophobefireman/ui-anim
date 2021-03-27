@@ -9,8 +9,9 @@ console.log(`$ cp ${src} ${dest}`);
 console.log("replacing imports");
 
 const sourceContent = readFileSync(src).toString();
+// who needs webpack
 const targetContent = sourceContent
-  .split("@hydrophobefireman")
-  .join("https://cdn.skypack.dev/@hydrophobefireman");
+  .split("@hydrophobefireman/ui-lib")
+  .join("./@hydrophobefireman/ui-lib.js");
 
 writeFileSync(dest, targetContent);

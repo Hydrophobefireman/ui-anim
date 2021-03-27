@@ -1,3 +1,5 @@
+import { ComponentType } from "@hydrophobefireman/ui-lib";
+
 export interface Snapshot {
   height: number;
   width: number;
@@ -35,11 +37,17 @@ export interface AnimateOptions {
   steps: number;
 }
 
-export interface AnimateLayoutProps<T = string> {
+interface AnimationProps<T = string> {
   element: T;
   animId: string;
   time?: number;
   children?: any;
 }
+export type DomElements = keyof JSX.IntrinsicElements;
 
+export type AnimateLayoutProps<T extends DomElements> = Omit<
+  JSX.IntrinsicElements[T],
+  "children"
+> &
+  AnimationProps<string>;
 export {};

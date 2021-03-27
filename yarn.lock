@@ -922,11 +922,6 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@hydrophobefireman/j-utils@^2.1.6":
-  version "2.1.6"
-  resolved "https://registry.yarnpkg.com/@hydrophobefireman/j-utils/-/j-utils-2.1.6.tgz#4ddf7e57d53ceae7245c7b907665f98f6f2f30f8"
-  integrity sha512-gwcKHXTsos2KaQisSE/0QxaelhwHL+EnpcyBN9I9oDnQfhqj6D05XPlMGJIuuwn1jiWtd9z8C/bjefEuUQrNng==
-
 "@hydrophobefireman/ui-lib@^1.8.7":
   version "1.8.7"
   resolved "https://registry.yarnpkg.com/@hydrophobefireman/ui-lib/-/ui-lib-1.8.7.tgz#ebd01f8cfb81ec7e2535d5a7c81dc6353146b3a2"

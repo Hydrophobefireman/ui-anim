@@ -2,7 +2,7 @@ import {
   render,
   useState,
   h,
-} from "https://cdn.skypack.dev/@hydrophobefireman/ui-lib";
+} from "./@hydrophobefireman/ui-lib.js";
 import { AnimateLayout, Motion } from "./anim.js";
 
 function App() {

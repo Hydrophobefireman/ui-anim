@@ -1,4 +1,3 @@
-import { FakeSet } from "@hydrophobefireman/j-utils";
 import { createContext } from "@hydrophobefireman/ui-lib";
 import { DEFAULT_ANIM_TIME } from "../util/constants";
 import type { MotionManager } from "../Motion";
@@ -16,9 +15,12 @@ interface MotionTreeConfig {
   parent: MotionTreeNode | null;
 }
 export class MotionTreeNode {
-  children = new FakeSet<MotionTreeNode>();
+  protected children = new Set<MotionTreeNode>();
   private _resizeListener?: ResizeCallback;
   private _motionManager: MotionManager;
+  isReady() {
+    return !!this._motionManager;
+  }
   private _config: MotionTreeConfig = {
     id: null,
     isRoot: null,
@@ -28,6 +30,10 @@ export class MotionTreeNode {
   };
   setManager(m: MotionManager) {
     this._motionManager = m;
+  }
+  unmount() {
+    window.removeEventListener("resize", this._resizeListener);
+    this._motionManager = this._config = this._resizeListener = null;
   }
   getSnapshot() {
     return this._motionManager.getSnapshot(this._config.id);
@@ -47,8 +53,8 @@ export class MotionTreeNode {
   }
   requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
     const existingSnapshot = this.getSnapshot();
-    if (!existingSnapshot) return; // don't animate if we don't know where it started from
     const currentSnapshot = this.measure();
+    if (!existingSnapshot) return; // don't animate if we don't know where it started from
 
     const delta = calcDelta(currentSnapshot, existingSnapshot);
     const mapped = this.children;
@@ -60,7 +66,7 @@ export class MotionTreeNode {
     mapped.forEach((tree) => tree.requestLayout(nextScale, delta));
     this.animateTreeDelta(delta, $scale, parentDelta);
   }
-  animateTreeDelta(
+  protected animateTreeDelta(
     delta: Transform,
     scale = { x: 1, y: 1 },
     parentDelta?: Transform

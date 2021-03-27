@@ -1,19 +1,29 @@
-import { createContext, useMemo, createElement, useRef, useState, useContext, useLayoutEffect } from './@hydrophobefireman/ui-lib.js';
+import {
+  createContext,
+  useMemo,
+  createElement,
+  useRef,
+  useState,
+  useContext,
+  useLayoutEffect,
+} from "./@hydrophobefireman/ui-lib.js";
 
 function _extends() {
-  _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
+  _extends =
+    Object.assign ||
+    function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
 
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
         }
       }
-    }
 
-    return target;
-  };
+      return target;
+    };
 
   return _extends.apply(this, arguments);
 }
@@ -33,12 +43,7 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 
-function animate({
-  from,
-  to,
-  callback,
-  steps
-}) {
+function animate({ from, to, callback, steps }) {
   const incrementValue = (to - from) / steps;
   return _createAnimation(from, to, incrementValue, callback);
 }
@@ -48,13 +53,18 @@ function interpolate(from, to, progress) {
 
 function _createAnimation(from, to, incrementValue, callback) {
   if (incrementValue > 0 ? from >= to : from <= to) return callback(to);
-  requestAnimationFrame(() => _createAnimation(from + incrementValue, to, incrementValue, callback));
+  requestAnimationFrame(() =>
+    _createAnimation(from + incrementValue, to, incrementValue, callback)
+  );
   callback(from);
 }
 
-const freeze = "freeze" in Object ? Object.freeze : function freeze(obj) {
-  return obj;
-};
+const freeze =
+  "freeze" in Object
+    ? Object.freeze
+    : function freeze(obj) {
+        return obj;
+      };
 
 function applyTransform(el, transform) {
   el.style.transform = `
@@ -64,22 +74,13 @@ function applyTransform(el, transform) {
   scaleY(${transform.scaleY})`;
 } // export function applyBorderRadius(el: HTMLElement, t: Transform) {
 //   const { currHeight, currWidth } = t;
-//   const currRadius 
+//   const currRadius
 // }
 
 function snapshot(el) {
   el.style.transform = "";
   const snap = el.getBoundingClientRect();
-  const {
-    height,
-    width,
-    x,
-    y,
-    left,
-    right,
-    top,
-    bottom
-  } = snap;
+  const { height, width, x, y, left, right, top, bottom } = snap;
   return freeze({
     height,
     width,
@@ -87,39 +88,36 @@ function snapshot(el) {
     y,
     originPoints: {
       x: interpolate(left, right, 0.5),
-      y: interpolate(top, bottom, 0.5)
-    }
+      y: interpolate(top, bottom, 0.5),
+    },
   });
 }
 function calcDelta(currentSnapshot, previousSnapshot) {
   const {
     originPoints: prevOriginPoints,
     width: prevWidth,
-    height: prevHeight
+    height: prevHeight,
   } = previousSnapshot;
   const {
     originPoints: currOriginPoints,
     width: currWidth,
-    height: currHeight
+    height: currHeight,
   } = currentSnapshot;
   return {
     currWidth,
     currHeight,
     x: {
       translate: prevOriginPoints.x - currOriginPoints.x,
-      scale: prevWidth / currWidth
+      scale: prevWidth / currWidth,
     },
     y: {
       translate: prevOriginPoints.y - currOriginPoints.y,
-      scale: prevHeight / currHeight
-    }
+      scale: prevHeight / currHeight,
+    },
   };
 }
 function animateDelta(el, translateDelta, time = 300, treeScale, parentDelta) {
-  const {
-    x,
-    y
-  } = translateDelta;
+  const { x, y } = translateDelta;
   animate({
     from: 0,
     to: 1,
@@ -130,19 +128,34 @@ function animateDelta(el, translateDelta, time = 300, treeScale, parentDelta) {
       const transform = {
         scaleX: interpolate(scaleX, 1, progress),
         scaleY: interpolate(scaleY, 1, progress),
-        translateX: interpolate(relativeTranslate(x.translate, parentDelta && parentDelta.x.translate), 0, progress),
-        translateY: interpolate(relativeTranslate(y.translate, parentDelta && parentDelta.y.translate), 0, progress)
+        translateX: interpolate(
+          relativeTranslate(
+            x.translate,
+            parentDelta && parentDelta.x.translate
+          ),
+          0,
+          progress
+        ),
+        translateY: interpolate(
+          relativeTranslate(
+            y.translate,
+            parentDelta && parentDelta.y.translate
+          ),
+          0,
+          progress
+        ),
       };
       applyTransform(el, transform);
     },
 
-    steps: time / 16
+    steps: time / 16,
   });
 }
 
 function relativeTranslate(curr, parent, scale) {
-  return parent ? 0 : // ? (scale < 1 ? curr * (1 - scale) : curr - curr / scale) - parent
-  curr;
+  return parent
+    ? 0 // ? (scale < 1 ? curr * (1 - scale) : curr - curr / scale) - parent
+    : curr;
 }
 
 const MotionContext = createContext(null);
@@ -165,15 +178,12 @@ class MotionManager {
 
     return newSnapshot;
   }
-
 }
-function Motion({
-  children
-}) {
+function Motion({ children }) {
   const manager = useMemo(() => new MotionManager(), []);
   return createElement(MotionContext.Provider, {
     value: manager,
-    children
+    children,
   });
 }
 
@@ -188,7 +198,7 @@ class MotionTreeNode {
       isRoot: null,
       time: null,
       wrappedDomNode: null,
-      parent: null
+      parent: null,
     };
   }
 
@@ -218,13 +228,20 @@ class MotionTreeNode {
   }
 
   measure() {
-    return this._motionManager.measure(this._config.id, this._config.wrappedDomNode, this._config.time || DEFAULT_ANIM_TIME);
+    return this._motionManager.measure(
+      this._config.id,
+      this._config.wrappedDomNode,
+      this._config.time || DEFAULT_ANIM_TIME
+    );
   }
 
-  requestLayout($scale = {
-    x: 1,
-    y: 1
-  }, parentDelta) {
+  requestLayout(
+    $scale = {
+      x: 1,
+      y: 1,
+    },
+    parentDelta
+  ) {
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
     if (!existingSnapshot) return; // don't animate if we don't know where it started from
@@ -233,32 +250,37 @@ class MotionTreeNode {
     const mapped = this.children;
     const nextScale = {
       x: delta.x.scale,
-      y: delta.y.scale
+      y: delta.y.scale,
     };
-    mapped.forEach(tree => tree.requestLayout(nextScale, delta));
+    mapped.forEach((tree) => tree.requestLayout(nextScale, delta));
     this.animateTreeDelta(delta, $scale, parentDelta);
   }
 
-  animateTreeDelta(delta, scale = {
-    x: 1,
-    y: 1
-  }, parentDelta) {
-    animateDelta(this._config.wrappedDomNode, delta, this._config.time, scale, parentDelta);
+  animateTreeDelta(
+    delta,
+    scale = {
+      x: 1,
+      y: 1,
+    },
+    parentDelta
+  ) {
+    animateDelta(
+      this._config.wrappedDomNode,
+      delta,
+      this._config.time,
+      scale,
+      parentDelta
+    );
   }
 
-  setTreeState({
-    wrappedDomNode,
-    time,
-    id,
-    parent
-  }) {
+  setTreeState({ wrappedDomNode, time, id, parent }) {
     const isRoot = parent == null;
     this._config = {
       wrappedDomNode,
       time,
       id,
       isRoot,
-      parent
+      parent,
     };
 
     if (!isRoot) {
@@ -270,7 +292,7 @@ class MotionTreeNode {
       if (!this._resizeListener) {
         const listener = () => {
           this.measure();
-          this.children.forEach(x => x.measure());
+          this.children.forEach((x) => x.measure());
         };
 
         this._resizeListener = listener;
@@ -278,16 +300,11 @@ class MotionTreeNode {
       }
     }
   }
-
 }
 
 function AnimateLayout(p) {
-  const {
-    element,
-    animId,
-    time
-  } = p,
-        rest = _objectWithoutPropertiesLoose(p, ["element", "animId", "time"]);
+  const { element, animId, time } = p,
+    rest = _objectWithoutPropertiesLoose(p, ["element", "animId", "time"]);
 
   const ref = useRef();
   const [node, setNode] = useState(null);
@@ -303,7 +320,7 @@ function AnimateLayout(p) {
       id: animId,
       wrappedDomNode: ref.current,
       parent,
-      time
+      time,
     });
     return () => {
       parent && parent.detach(node);
@@ -313,11 +330,21 @@ function AnimateLayout(p) {
   useLayoutEffect(() => {
     ref.current && node && node.isReady() && node.requestLayout();
   });
-  return createElement(TreeContext.Provider, {
-    value: node
-  }, createElement(element, _extends({
-    ref
-  }, rest)));
+  return createElement(
+    TreeContext.Provider,
+    {
+      value: node,
+    },
+    createElement(
+      element,
+      _extends(
+        {
+          ref,
+        },
+        rest
+      )
+    )
+  );
 } // export function $AnimateLayout<>(
 //   p: AnimateLayoutProps<T
 // ): JSX.Element {
@@ -372,3 +399,4 @@ function AnimateLayout(p) {
 
 export { AnimateLayout, Motion };
 //# sourceMappingURL=ui-anim.modern.js.map
+

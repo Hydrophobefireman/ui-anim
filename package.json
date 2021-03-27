@@ -31,7 +31,6 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@hydrophobefireman/j-utils": "^2.1.6",
     "@hydrophobefireman/ui-lib": "^1.8.7"
   }
 }

@@ -1,8 +1,4 @@
-import {
-  render,
-  useState,
-  h,
-} from "https://cdn.skypack.dev/@hydrophobefireman/ui-lib";
+import { render, useState, h } from "./@hydrophobefireman/ui-lib.js";
 import { AnimateLayout, Motion } from "./anim.js";
 
 function App() {
