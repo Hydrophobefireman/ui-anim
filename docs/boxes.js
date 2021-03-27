@@ -3,7 +3,7 @@ import { AnimateLayout, Motion } from "./anim.js";
 
 const getList = (x) => Array.from({ length: x }).map((_, i) => i);
 function App() {
-  const [count, setCount] = useState(1);
+  const [count, setCount] = useState(20);
   const [time, setTime] = useState(300);
   const [arr, setArr] = useState(() => getList(count));
   function $setCount(x) {

@@ -10,6 +10,10 @@ import { AnimateLayoutProps, DomElements } from "./types";
 import { MotionContext } from "./Motion";
 import { MotionTreeNode, TreeContext } from "./context/MotionTree";
 
+function isIsolatedAnimation(parent: MotionTreeNode) {
+  return !parent || !parent.isAnimating();
+}
+
 export function AnimateLayout<T extends DomElements = "div">(
   p: AnimateLayoutProps<T>
 ): JSX.Element {
@@ -20,9 +24,6 @@ export function AnimateLayout<T extends DomElements = "div">(
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
 
-  useLayoutEffect(() => {
-    ref.current && node && node.isReady() && node.requestLayout();
-  });
   useLayoutEffect(() => {
     const node = new MotionTreeNode();
     parent && parent.attach(node);
@@ -35,12 +36,18 @@ export function AnimateLayout<T extends DomElements = "div">(
       parent,
       time,
     });
+    node.safeRequestLayout({ nextFrame: true });
     return () => {
       parent && parent.detach(node);
       node.unmount();
     };
   }, [ref.current, animId, time, parent, manager]);
-
+  useLayoutEffect(() => {
+    ref.current &&
+      node &&
+      isIsolatedAnimation(parent) &&
+      node.safeRequestLayout({});
+  });
   return createElement(
     TreeContext.Provider as any,
     { value: node as any },

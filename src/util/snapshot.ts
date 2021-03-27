@@ -56,39 +56,42 @@ export function animateDelta(
   treeScale: { x: number; y: number },
   parentDelta?: Transform
 ) {
-  const { x, y } = translateDelta;
+  return new Promise((resolve) => {
+    const { x, y } = translateDelta;
 
-  animate({
-    from: 0,
-    to: 1,
-    callback(progress) {
-      const scaleX = x.scale / treeScale.x;
-      const scaleY = y.scale / treeScale.y;
-      const transform = {
-        scaleX: interpolate(scaleX, 1, progress),
-        scaleY: interpolate(scaleY, 1, progress),
-        translateX: interpolate(
-          relativeTranslate(
-            x.translate,
-            parentDelta && parentDelta.x.translate,
-            scaleX
+    animate({
+      from: 0,
+      to: 1,
+      callback(progress) {
+        const scaleX = x.scale / treeScale.x;
+        const scaleY = y.scale / treeScale.y;
+        const transform = {
+          scaleX: interpolate(scaleX, 1, progress),
+          scaleY: interpolate(scaleY, 1, progress),
+          translateX: interpolate(
+            relativeTranslate(
+              x.translate,
+              parentDelta && parentDelta.x.translate,
+              scaleX
+            ),
+            0,
+            progress
           ),
-          0,
-          progress
-        ),
-        translateY: interpolate(
-          relativeTranslate(
-            y.translate,
-            parentDelta && parentDelta.y.translate,
-            scaleY
+          translateY: interpolate(
+            relativeTranslate(
+              y.translate,
+              parentDelta && parentDelta.y.translate,
+              scaleY
+            ),
+            0,
+            progress
           ),
-          0,
-          progress
-        ),
-      };
-      applyTransform(el, transform);
-    },
-    steps: time / 16,
+        };
+        applyTransform(el, transform);
+        if (progress === 1) resolve(null);
+      },
+      steps: time / 16,
+    });
   });
 }
 

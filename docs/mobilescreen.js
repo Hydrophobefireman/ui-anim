@@ -49,7 +49,7 @@ function App() {
 
       onClick: () => setI(blueActive ? null : 2),
       style: {
-        // opacity: 0,
+        opacity: 0,
         zIndex: redActive ? 0 : 1,
         backgroundColor: "blue",
         margin: i == null ? "1rem" : 0,

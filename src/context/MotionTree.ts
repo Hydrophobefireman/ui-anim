@@ -18,8 +18,12 @@ export class MotionTreeNode {
   protected children = new Set<MotionTreeNode>();
   private _resizeListener?: ResizeCallback;
   private _motionManager: MotionManager;
+  private _isAnimating = false;
   isReady() {
     return !!this._motionManager;
+  }
+  isAnimating() {
+    return this._isAnimating;
   }
   private _config: MotionTreeConfig = {
     id: null,
@@ -51,6 +55,11 @@ export class MotionTreeNode {
       this._config.time || DEFAULT_ANIM_TIME
     );
   }
+  safeRequestLayout({ nextFrame }: { nextFrame?: boolean }) {
+    const fn = () =>
+      this.isReady() && !this.isAnimating() && this.requestLayout();
+    nextFrame ? requestAnimationFrame(fn) : fn();
+  }
   requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
@@ -71,13 +80,16 @@ export class MotionTreeNode {
     scale = { x: 1, y: 1 },
     parentDelta?: Transform
   ) {
+    this._isAnimating = true;
     animateDelta(
       this._config.wrappedDomNode,
       delta,
       this._config.time,
       scale,
       parentDelta
-    );
+    ).then((x) => {
+      this._isAnimating = false;
+    });
   }
   setTreeState({
     wrappedDomNode,
