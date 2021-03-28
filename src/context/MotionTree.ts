@@ -19,11 +19,19 @@ export class MotionTreeNode {
   private _resizeListener?: ResizeCallback;
   private _motionManager: MotionManager;
   private _isAnimating = false;
+  private _cancelled = false;
   isReady() {
     return !!this._motionManager;
   }
   isAnimating() {
     return this._isAnimating;
+  }
+  isCancelled() {
+    return this._cancelled;
+  }
+  cancel() {
+    this._cancelled = true;
+    return this;
   }
   private _config: MotionTreeConfig = {
     id: null,
@@ -34,19 +42,23 @@ export class MotionTreeNode {
   };
   setManager(m: MotionManager) {
     this._motionManager = m;
+    return this;
   }
   unmount() {
     window.removeEventListener("resize", this._resizeListener);
     this._motionManager = this._config = this._resizeListener = null;
+    return this;
   }
   getSnapshot() {
     return this._motionManager.getSnapshot(this._config.id);
   }
   attach(child: MotionTreeNode) {
     this.children.add(child);
+    return this;
   }
   detach(child: MotionTreeNode) {
     this.children.delete(child);
+    return this;
   }
   measure() {
     return this._motionManager.measure(
@@ -59,6 +71,7 @@ export class MotionTreeNode {
     const fn = () =>
       this.isReady() && !this.isAnimating() && this.requestLayout();
     nextFrame ? requestAnimationFrame(fn) : fn();
+    return this;
   }
   requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
     const existingSnapshot = this.getSnapshot();
@@ -74,6 +87,7 @@ export class MotionTreeNode {
 
     mapped.forEach((tree) => tree.requestLayout(nextScale, delta));
     this.animateTreeDelta(delta, $scale, parentDelta);
+    return this;
   }
   protected animateTreeDelta(
     delta: Transform,
@@ -81,15 +95,17 @@ export class MotionTreeNode {
     parentDelta?: Transform
   ) {
     this._isAnimating = true;
-    animateDelta(
-      this._config.wrappedDomNode,
-      delta,
-      this._config.time,
-      scale,
-      parentDelta
-    ).then((x) => {
+    animateDelta({
+      el: this._config.wrappedDomNode,
+      translateDelta: delta,
+      time: this._config.time,
+      nodeInstance: this,
+      treeScale: scale,
+      parentDelta,
+    }).then((x) => {
       this._isAnimating = false;
     });
+    return this;
   }
   setTreeState({
     wrappedDomNode,
@@ -114,5 +130,6 @@ export class MotionTreeNode {
         window.addEventListener("resize", this._resizeListener);
       }
     }
+    return this;
   }
 }

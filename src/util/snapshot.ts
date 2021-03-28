@@ -1,5 +1,6 @@
-import { Snapshot, Transform } from "../types";
-import { animate, interpolate } from "./animate";
+import { MotionTreeNode } from "../context/MotionTree";
+import { AnimateDeltaProps, Snapshot, Transform } from "../types";
+import { animate, CANCELLED, interpolate } from "./animate";
 import { freeze } from "./freeze";
 import { applyTransform } from "./transform";
 
@@ -49,20 +50,22 @@ export function calcDelta(
   };
 }
 
-export function animateDelta(
-  el: HTMLElement,
-  translateDelta: Transform,
-  time: number = 300,
-  treeScale: { x: number; y: number },
-  parentDelta?: Transform
-) {
+export function animateDelta({
+  el,
+  nodeInstance,
+  time = 300,
+  translateDelta,
+  treeScale,
+  parentDelta,
+}: AnimateDeltaProps) {
   return new Promise((resolve) => {
     const { x, y } = translateDelta;
 
     animate({
       from: 0,
       to: 1,
-      callback(progress) {
+      callback(progress: number, cancel) {
+        if (progress === CANCELLED) return;
         const scaleX = x.scale / treeScale.x;
         const scaleY = y.scale / treeScale.y;
         const transform = {
@@ -89,6 +92,9 @@ export function animateDelta(
         };
         applyTransform(el, transform);
         if (progress === 1) resolve(null);
+        if (nodeInstance.isCancelled()) {
+          cancel();
+        }
       },
       steps: time / 16,
     });

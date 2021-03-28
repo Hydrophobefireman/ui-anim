@@ -1,4 +1,5 @@
 import { ComponentType } from "@hydrophobefireman/ui-lib";
+import { MotionTreeNode } from "./context/MotionTree";
 
 export interface Snapshot {
   height: number;
@@ -27,7 +28,10 @@ interface AxisTransform {
   translate: number;
 }
 export interface AnimationCallback {
-  (progress: number): void;
+  (
+    progress: number | typeof import("./util/animate")["CANCELLED"],
+    cancel?: () => void
+  ): void;
 }
 
 export interface AnimateOptions {
@@ -50,4 +54,12 @@ export type AnimateLayoutProps<T extends DomElements> = Omit<
   "children"
 > &
   AnimationProps<string>;
+export interface AnimateDeltaProps {
+  el: HTMLElement;
+  translateDelta: Transform;
+  time: number;
+  nodeInstance: MotionTreeNode;
+  treeScale: { x: number; y: number };
+  parentDelta?: Transform;
+}
 export {};
