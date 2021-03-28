@@ -1,4 +1,4 @@
-import { createContext, useMemo, createElement, useRef, useState, useContext, useLayoutEffect } from './@hydrophobefireman/ui-lib.js';
+import { createContext, useMemo, createElement, useRef, useState, useContext, useLayoutEffect, useEffect } from './@hydrophobefireman/ui-lib.js';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -33,6 +33,7 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 
+const CANCELLED = {};
 function animate({
   from,
   to,
@@ -40,16 +41,25 @@ function animate({
   steps
 }) {
   const incrementValue = (to - from) / steps;
-  return _createAnimation(from, to, incrementValue, callback);
+  const cancelToken = {
+    cancelled: false
+  };
+
+  function cancel() {
+    cancelToken.cancelled = true;
+  }
+
+  return _createAnimation(from, to, incrementValue, callback, cancelToken, cancel);
 }
 function interpolate(from, to, progress) {
   return -progress * from + progress * to + from;
 }
 
-function _createAnimation(from, to, incrementValue, callback) {
+function _createAnimation(from, to, incrementValue, callback, cancelToken, cancel) {
+  if (cancelToken.cancelled) return callback(CANCELLED);
   if (incrementValue > 0 ? from >= to : from <= to) return callback(to);
-  requestAnimationFrame(() => _createAnimation(from + incrementValue, to, incrementValue, callback));
-  callback(from);
+  requestAnimationFrame(() => _createAnimation(from + incrementValue, to, incrementValue, callback, cancelToken, cancel));
+  callback(from, cancel);
 }
 
 const freeze = "freeze" in Object ? Object.freeze : function freeze(obj) {
@@ -115,7 +125,16 @@ function calcDelta(currentSnapshot, previousSnapshot) {
     }
   };
 }
-function animateDelta(el, translateDelta, time = 300, treeScale, parentDelta) {
+function animateDelta({
+  el,
+  nodeInstance,
+  time = 300,
+  translateDelta,
+  treeScale,
+  parentDelta
+}) {
+  const prev = el.style.transition;
+  el.style.transition = "0s";
   return new Promise(resolve => {
     const {
       x,
@@ -125,7 +144,8 @@ function animateDelta(el, translateDelta, time = 300, treeScale, parentDelta) {
       from: 0,
       to: 1,
 
-      callback(progress) {
+      callback(progress, cancel) {
+        if (progress === CANCELLED) return resolve(null);
         const scaleX = x.scale / treeScale.x;
         const scaleY = y.scale / treeScale.y;
         const transform = {
@@ -136,10 +156,17 @@ function animateDelta(el, translateDelta, time = 300, treeScale, parentDelta) {
         };
         applyTransform(el, transform);
         if (progress === 1) resolve(null);
+
+        if (nodeInstance.isCancelled()) {
+          cancel();
+        }
       },
 
       steps: time / 16
     });
+  }).then(() => {
+    requestAnimationFrame(() => el.style.transition = prev);
+    return null;
   });
 }
 
@@ -187,6 +214,7 @@ class MotionTreeNode {
   constructor() {
     this.children = new Set();
     this._isAnimating = false;
+    this._cancelled = false;
     this._config = {
       id: null,
       isRoot: null,
@@ -204,13 +232,24 @@ class MotionTreeNode {
     return this._isAnimating;
   }
 
+  isCancelled() {
+    return this._cancelled;
+  }
+
+  cancel() {
+    this._cancelled = true;
+    return this;
+  }
+
   setManager(m) {
     this._motionManager = m;
+    return this;
   }
 
   unmount() {
     window.removeEventListener("resize", this._resizeListener);
     this._motionManager = this._config = this._resizeListener = null;
+    return this;
   }
 
   getSnapshot() {
@@ -219,10 +258,12 @@ class MotionTreeNode {
 
   attach(child) {
     this.children.add(child);
+    return this;
   }
 
   detach(child) {
     this.children.delete(child);
+    return this;
   }
 
   measure() {
@@ -235,6 +276,7 @@ class MotionTreeNode {
     const fn = () => this.isReady() && !this.isAnimating() && this.requestLayout();
 
     nextFrame ? requestAnimationFrame(fn) : fn();
+    return this;
   }
 
   requestLayout($scale = {
@@ -253,6 +295,7 @@ class MotionTreeNode {
     };
     mapped.forEach(tree => tree.requestLayout(nextScale, delta));
     this.animateTreeDelta(delta, $scale, parentDelta);
+    return this;
   }
 
   animateTreeDelta(delta, scale = {
@@ -260,9 +303,17 @@ class MotionTreeNode {
     y: 1
   }, parentDelta) {
     this._isAnimating = true;
-    animateDelta(this._config.wrappedDomNode, delta, this._config.time, scale, parentDelta).then(x => {
+    animateDelta({
+      el: this._config.wrappedDomNode,
+      translateDelta: delta,
+      time: this._config.time,
+      nodeInstance: this,
+      treeScale: scale,
+      parentDelta
+    }).then(x => {
       this._isAnimating = false;
     });
+    return this;
   }
 
   setTreeState({
@@ -296,6 +347,8 @@ class MotionTreeNode {
         window.addEventListener("resize", this._resizeListener);
       }
     }
+
+    return this;
   }
 
 }
@@ -327,8 +380,7 @@ function AnimateLayout(p) {
       wrappedDomNode: ref.current,
       parent,
       time
-    });
-    node.safeRequestLayout({
+    }).safeRequestLayout({
       nextFrame: true
     });
     return () => {
@@ -339,62 +391,13 @@ function AnimateLayout(p) {
   useLayoutEffect(() => {
     ref.current && node && isIsolatedAnimation(parent) && node.safeRequestLayout({});
   });
+  useEffect(() => () => node && node.cancel().unmount(), [node]);
   return createElement(TreeContext.Provider, {
     value: node
   }, createElement(element, _extends({
     ref
   }, rest)));
-} // export function $AnimateLayout<>(
-//   p: AnimateLayoutProps<T
-// ): JSX.Element {
-//   const { element, animId, ref: providedRef, time, ...rest } = p;
-//   const manager = useContext(MotionContext);
-//   const parent = useContext(TreeContext);
-//   const node = useMemo(() => new MotionTreeNode(), []);
-//   const ref = useRef<HTMLElement>();
-//   const didAdd = useRef(false);
-//   const old = useRef<string>("");
-//   useLayoutEffect(() => {
-//     if (ref.current) {
-//       old.current = ref.current.style.visibility;
-//       ref.current.style.visibility = "hidden";
-//     }
-//     node.setManager(manager);
-//   }, [manager, node]);
-//   useEffect(() => {
-//     providedRef && (providedRef.current = ref.current);
-//     if (ref.current && !didAdd.current) {
-//       didAdd.current = true;
-//       parent && parent.attach(node);
-//       node.setTreeState({
-//         wrappedDomNode: ref.current,
-//         time,
-//         id: animId,
-//         parent,
-//       });
-//       !node.getSnapshot() && node.measure();
-//       node.requestLayout();
-//       if (ref.current && old.current != null) {
-//         ref.current.style.visibility = old.current;
-//         old.current = null;
-//       }
-//       return () => {
-//         parent && parent.detach(node);
-//         didAdd.current = false;
-//       };
-//     }
-//   }, [ref.current, animId, time, parent, node]);
-//   useLayoutEffect(() => {
-//     didAdd.current && !parent && node.requestLayout();
-//   });
-//   if (!manager)
-//     throw new Error("Cannot render without an existing motion context!");
-//   return createElement(
-//     TreeContext.Provider as any,
-//     { value: node } as any,
-//     createElement(element, { ref, ...rest } as createElementPropType<any>)
-//   );
-// }
+}
 
 export { AnimateLayout, Motion };
 //# sourceMappingURL=ui-anim.modern.js.map

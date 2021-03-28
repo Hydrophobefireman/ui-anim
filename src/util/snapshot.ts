@@ -58,14 +58,15 @@ export function animateDelta({
   treeScale,
   parentDelta,
 }: AnimateDeltaProps) {
+  const prev = el.style.transition;
+  el.style.transition = "0s";
   return new Promise((resolve) => {
     const { x, y } = translateDelta;
-
     animate({
       from: 0,
       to: 1,
       callback(progress: number, cancel) {
-        if (progress === CANCELLED) return;
+        if (progress === CANCELLED) return resolve(null);
         const scaleX = x.scale / treeScale.x;
         const scaleY = y.scale / treeScale.y;
         const transform = {
@@ -98,6 +99,9 @@ export function animateDelta({
       },
       steps: time / 16,
     });
+  }).then(() => {
+    requestAnimationFrame(() => (el.style.transition = prev));
+    return null;
   });
 }
 
