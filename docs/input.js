@@ -1,8 +1,4 @@
-import {
-  render,
-  useState,
-  h,
-} from "./@hydrophobefireman/ui-lib.js";
+import { render, useState, h } from "./@hydrophobefireman/ui-lib.js";
 import { AnimateLayout, Motion } from "./anim.js";
 
 function App() {
@@ -25,6 +21,7 @@ function App() {
             display: "block",
             position: "absolute",
             pointerEvents: "none",
+            transform: "scale(.5)",
           },
         },
         "Placeholder"

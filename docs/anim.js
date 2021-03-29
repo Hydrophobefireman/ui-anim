@@ -1,4 +1,4 @@
-import { createContext, useMemo, createElement, useRef, useState, useContext, useLayoutEffect, useEffect } from './@hydrophobefireman/ui-lib.js';
+import { createContext, useMemo, createElement, useRef, useContext, useState, useLayoutEffect, useEffect } from './@hydrophobefireman/ui-lib.js';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -229,6 +229,11 @@ class MotionTreeNode {
     };
   }
 
+  _reset() {
+    this.cancel();
+    this._isAnimating = false;
+  }
+
   isReady() {
     return !!this._motionManager;
   }
@@ -294,6 +299,8 @@ class MotionTreeNode {
     x: 1,
     y: 1
   }, parentDelta) {
+    this._reset();
+
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
     if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
@@ -313,6 +320,7 @@ class MotionTreeNode {
     y: 1
   }, parentDelta) {
     this._isAnimating = true;
+    this._cancelled = false;
     return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,
@@ -375,24 +383,25 @@ function AnimateLayout(p) {
         rest = _objectWithoutPropertiesLoose(p, ["element", "animId", "time"]);
 
   const ref = useRef();
-  const [node, setNode] = useState(null);
+  const nodeRef = useRef();
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
-  const firstMount = useRef(false);
+  const node = nodeRef.current;
+  const [, reRender] = useState(null);
   useLayoutEffect(() => {
-    const node = new MotionTreeNode();
+    const node = nodeRef.current || (nodeRef.current = new MotionTreeNode());
     parent && parent.attach(node);
     node.setManager(manager);
-    setNode(node);
     if (!ref.current) return;
-    node.setTreeState({
+    const snap = node.setTreeState({
       id: animId,
       wrappedDomNode: ref.current,
       parent,
       time
-    }).safeRequestLayout({
-      nextFrame: !firstMount.current
-    }).then(() => firstMount.current = true);
+    }).getSnapshot();
+    const obj = {};
+    if (!snap) reRender(obj);
+    node.safeRequestLayout(obj);
     return () => {
       parent && parent.detach(node);
       node.unmount();

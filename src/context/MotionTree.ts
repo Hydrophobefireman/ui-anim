@@ -20,6 +20,10 @@ export class MotionTreeNode {
   private _motionManager: MotionManager;
   private _isAnimating = false;
   private _cancelled = false;
+  private _reset() {
+    this.cancel();
+    this._isAnimating = false;
+  }
   isReady() {
     return !!this._motionManager;
   }
@@ -80,6 +84,7 @@ export class MotionTreeNode {
     });
   }
   requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
+    this._reset();
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
     if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
@@ -100,6 +105,7 @@ export class MotionTreeNode {
     parentDelta?: Transform
   ) {
     this._isAnimating = true;
+    this._cancelled = false;
     return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,

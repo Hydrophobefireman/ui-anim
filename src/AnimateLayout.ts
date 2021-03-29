@@ -19,26 +19,29 @@ export function AnimateLayout<T extends DomElements = "div">(
 ): JSX.Element {
   const { element, animId, time, ...rest } = p;
   const ref = useRef<HTMLElement>();
-  const [node, setNode] = useState<MotionTreeNode>(null);
+  const nodeRef = useRef<MotionTreeNode>();
 
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
-  const firstMount = useRef(false);
+  const node = nodeRef.current;
+  const [, reRender] = useState<any>(null);
   useLayoutEffect(() => {
-    const node = new MotionTreeNode();
+    const node = nodeRef.current || (nodeRef.current = new MotionTreeNode());
     parent && parent.attach(node);
     node.setManager(manager);
-    setNode(node);
     if (!ref.current) return;
-    node
+    const snap = node
       .setTreeState({
         id: animId,
         wrappedDomNode: ref.current,
         parent,
         time,
       })
-      .safeRequestLayout({ nextFrame: !firstMount.current })
-      .then(() => (firstMount.current = true));
+      .getSnapshot();
+    const obj = {};
+    if (!snap) reRender(obj);
+    node.safeRequestLayout(obj);
+
     return () => {
       parent && parent.detach(node);
       node.unmount();
