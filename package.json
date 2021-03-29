@@ -1,6 +1,6 @@
 {
   "name": "@hydrophobefireman/ui-anim",
-  "version": "1.8.3",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/ui-anim.modern.js",
   "scripts": {
