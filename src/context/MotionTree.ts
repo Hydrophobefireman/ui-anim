@@ -1,12 +1,10 @@
 import { createContext } from "@hydrophobefireman/ui-lib";
-import { DEFAULT_ANIM_TIME } from "../util/constants";
 import type { MotionManager } from "../Motion";
 import { animateDelta, calcDelta } from "../util/snapshot";
 import { Transform } from "../types";
+import { DEFAULT_ANIM_TIME } from "../util/constants";
 export const TreeContext = createContext<MotionTreeNode>(null);
-interface ResizeCallback {
-  (): void;
-}
+
 interface MotionTreeConfig {
   wrappedDomNode: HTMLElement;
   id: string;
@@ -16,7 +14,7 @@ interface MotionTreeConfig {
 }
 export class MotionTreeNode {
   protected children = new Set<MotionTreeNode>();
-  private _resizeListener?: ResizeCallback;
+
   private _motionManager: MotionManager;
   private _isAnimating = false;
   private _cancelled = false;
@@ -50,8 +48,7 @@ export class MotionTreeNode {
     return this;
   }
   unmount() {
-    window.removeEventListener("resize", this._resizeListener);
-    this._motionManager = this._config = this._resizeListener = null;
+    this._motionManager = this._config = null;
     return this;
   }
   getSnapshot() {
@@ -68,8 +65,7 @@ export class MotionTreeNode {
   measure() {
     return this._motionManager.measure(
       this._config.id,
-      this._config.wrappedDomNode,
-      this._config.time || DEFAULT_ANIM_TIME
+      this._config.wrappedDomNode
     );
   }
   safeRequestLayout({ nextFrame }: { nextFrame?: boolean }) {
@@ -87,7 +83,8 @@ export class MotionTreeNode {
     this._reset();
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
-    if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
+    // don't animate if we don't know where it started from
+    if (!existingSnapshot) return Promise.resolve(null);
 
     const delta = calcDelta(currentSnapshot, existingSnapshot);
     const mapped = this.children;
@@ -109,7 +106,7 @@ export class MotionTreeNode {
     return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,
-      time: this._config.time,
+      time: this._config.time || DEFAULT_ANIM_TIME,
       nodeInstance: this,
       treeScale: scale,
       parentDelta,
@@ -125,21 +122,6 @@ export class MotionTreeNode {
   }: Omit<MotionTreeConfig, "isRoot">) {
     const isRoot = parent == null;
     this._config = { wrappedDomNode, time, id, isRoot, parent };
-    if (!isRoot) {
-      if (this._resizeListener) {
-        window.removeEventListener("resize", this._resizeListener);
-        this._resizeListener = null;
-      }
-    } else {
-      if (!this._resizeListener) {
-        const listener = () => {
-          this.measure();
-          this.children.forEach((x) => x.measure());
-        };
-        this._resizeListener = listener;
-        window.addEventListener("resize", this._resizeListener);
-      }
-    }
     return this;
   }
 }

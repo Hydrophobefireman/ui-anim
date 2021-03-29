@@ -1,22 +1,33 @@
-import { MotionTreeNode } from "../context/MotionTree";
 import { AnimateDeltaProps, Snapshot, Transform } from "../types";
 import { animate, CANCELLED, interpolate } from "./animate";
 import { freeze } from "./freeze";
 import { applyTransform } from "./transform";
 
+const doc = document.documentElement;
+
 export function snapshot(el: HTMLElement): Snapshot {
   el.style.transform = "";
   const snap = el.getBoundingClientRect();
+  const docSnap = doc.getBoundingClientRect();
   const { height, width, x, y, left, right, top, bottom } = snap;
+  const { offsetHeight, offsetWidth } = doc;
 
   return freeze({
     height,
     width,
-    x,
-    y,
+    x: x - docSnap.left,
+    y: y - docSnap.top,
     originPoints: {
-      x: interpolate(left, right, 0.5),
-      y: interpolate(top, bottom, 0.5),
+      x: interpolate(
+        left - docSnap.left,
+        right - (docSnap.right - offsetWidth),
+        0.5
+      ),
+      y: interpolate(
+        top - docSnap.top,
+        bottom - (docSnap.bottom - offsetHeight),
+        0.5
+      ),
     },
   });
 }

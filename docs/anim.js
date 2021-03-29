@@ -1,4 +1,4 @@
-import { createContext, useMemo, createElement, useRef, useContext, useState, useLayoutEffect, useEffect } from './@hydrophobefireman/ui-lib.js';
+import { createContext, useMemo, useEffect, createElement, useRef, useContext, useState, useLayoutEffect } from './@hydrophobefireman/ui-lib.js';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -77,9 +77,11 @@ function applyTransform(el, transform) {
 //   const currRadius 
 // }
 
+const doc = document.documentElement;
 function snapshot(el) {
   el.style.transform = "";
   const snap = el.getBoundingClientRect();
+  const docSnap = doc.getBoundingClientRect();
   const {
     height,
     width,
@@ -90,14 +92,18 @@ function snapshot(el) {
     top,
     bottom
   } = snap;
+  const {
+    offsetHeight,
+    offsetWidth
+  } = doc;
   return freeze({
     height,
     width,
-    x,
-    y,
+    x: x - docSnap.left,
+    y: y - docSnap.top,
     originPoints: {
-      x: interpolate(left, right, 0.5),
-      y: interpolate(top, bottom, 0.5)
+      x: interpolate(left - docSnap.left, right - (docSnap.right - offsetWidth), 0.5),
+      y: interpolate(top - docSnap.top, bottom - (docSnap.bottom - offsetHeight), 0.5)
     }
   });
 }
@@ -191,7 +197,7 @@ class MotionManager {
     return this._snapshots.get(id);
   }
 
-  measure(id, e, t) {
+  measure(id, e) {
     const newSnapshot = snapshot(e);
 
     this._snapshots.set(id, newSnapshot);
@@ -201,11 +207,26 @@ class MotionManager {
     return newSnapshot;
   }
 
+  measureAll() {
+    this._snapshots.forEach((snapshot, id) => {
+      const dom = this._snapshotToDomMap.get(snapshot);
+
+      if (!dom) return;
+      this.measure(id, dom);
+    });
+  }
+
 }
 function Motion({
   children
 }) {
   const manager = useMemo(() => new MotionManager(), []);
+  useEffect(() => {
+    const l = () => manager.measureAll();
+
+    window.addEventListener("resize", l);
+    return () => window.removeEventListener("resize", l);
+  }, []);
   return createElement(MotionContext.Provider, {
     value: manager,
     children
@@ -258,8 +279,7 @@ class MotionTreeNode {
   }
 
   unmount() {
-    window.removeEventListener("resize", this._resizeListener);
-    this._motionManager = this._config = this._resizeListener = null;
+    this._motionManager = this._config = null;
     return this;
   }
 
@@ -278,7 +298,7 @@ class MotionTreeNode {
   }
 
   measure() {
-    return this._motionManager.measure(this._config.id, this._config.wrappedDomNode, this._config.time || DEFAULT_ANIM_TIME);
+    return this._motionManager.measure(this._config.id, this._config.wrappedDomNode);
   }
 
   safeRequestLayout({
@@ -302,9 +322,9 @@ class MotionTreeNode {
     this._reset();
 
     const existingSnapshot = this.getSnapshot();
-    const currentSnapshot = this.measure();
-    if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
+    const currentSnapshot = this.measure(); // don't animate if we don't know where it started from
 
+    if (!existingSnapshot) return Promise.resolve(null);
     const delta = calcDelta(currentSnapshot, existingSnapshot);
     const mapped = this.children;
     const nextScale = {
@@ -324,7 +344,7 @@ class MotionTreeNode {
     return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,
-      time: this._config.time,
+      time: this._config.time || DEFAULT_ANIM_TIME,
       nodeInstance: this,
       treeScale: scale,
       parentDelta
@@ -347,24 +367,6 @@ class MotionTreeNode {
       isRoot,
       parent
     };
-
-    if (!isRoot) {
-      if (this._resizeListener) {
-        window.removeEventListener("resize", this._resizeListener);
-        this._resizeListener = null;
-      }
-    } else {
-      if (!this._resizeListener) {
-        const listener = () => {
-          this.measure();
-          this.children.forEach(x => x.measure());
-        };
-
-        this._resizeListener = listener;
-        window.addEventListener("resize", this._resizeListener);
-      }
-    }
-
     return this;
   }
 
