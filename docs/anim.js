@@ -56,8 +56,8 @@ function interpolate(from, to, progress) {
 }
 
 function _createAnimation(from, to, incrementValue, callback, cancelToken, cancel) {
-  if (cancelToken.cancelled) return callback(CANCELLED);
-  if (incrementValue > 0 ? from >= to : from <= to) return callback(to);
+  if (cancelToken.cancelled) return callback(CANCELLED, cancel);
+  if (incrementValue > 0 ? from >= to : from <= to) return callback(to, cancel);
   requestAnimationFrame(() => _createAnimation(from + incrementValue, to, incrementValue, callback, cancelToken, cancel));
   callback(from, cancel);
 }
@@ -140,6 +140,11 @@ function animateDelta({
       x,
       y
     } = translateDelta;
+
+    if (x.scale === 1 && x.translate === 0 && y.scale === 1 && y.translate === 0 && treeScale.x === 1 && treeScale.y === 1) {
+      return resolve(null); //don't waste animation frames for nothing
+    }
+
     animate({
       from: 0,
       to: 1,
@@ -238,6 +243,7 @@ class MotionTreeNode {
 
   cancel() {
     this._cancelled = true;
+    this._isAnimating = false;
     return this;
   }
 
@@ -273,10 +279,15 @@ class MotionTreeNode {
   safeRequestLayout({
     nextFrame
   }) {
-    const fn = () => this.isReady() && !this.isAnimating() && this.requestLayout();
+    return new Promise(resolve => {
+      const fn = () => {
+        if (this.isReady()) return this.requestLayout().then(() => resolve(null));
+        resolve(null);
+      };
 
-    nextFrame ? requestAnimationFrame(fn) : fn();
-    return this;
+      nextFrame ? requestAnimationFrame(fn) : fn();
+      return this;
+    });
   }
 
   requestLayout($scale = {
@@ -285,7 +296,7 @@ class MotionTreeNode {
   }, parentDelta) {
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
-    if (!existingSnapshot) return; // don't animate if we don't know where it started from
+    if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
 
     const delta = calcDelta(currentSnapshot, existingSnapshot);
     const mapped = this.children;
@@ -294,8 +305,7 @@ class MotionTreeNode {
       y: delta.y.scale
     };
     mapped.forEach(tree => tree.requestLayout(nextScale, delta));
-    this.animateTreeDelta(delta, $scale, parentDelta);
-    return this;
+    return this.animateTreeDelta(delta, $scale, parentDelta);
   }
 
   animateTreeDelta(delta, scale = {
@@ -303,7 +313,7 @@ class MotionTreeNode {
     y: 1
   }, parentDelta) {
     this._isAnimating = true;
-    animateDelta({
+    return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,
       time: this._config.time,
@@ -313,7 +323,6 @@ class MotionTreeNode {
     }).then(x => {
       this._isAnimating = false;
     });
-    return this;
   }
 
   setTreeState({
@@ -369,6 +378,7 @@ function AnimateLayout(p) {
   const [node, setNode] = useState(null);
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
+  const firstMount = useRef(false);
   useLayoutEffect(() => {
     const node = new MotionTreeNode();
     parent && parent.attach(node);
@@ -381,8 +391,8 @@ function AnimateLayout(p) {
       parent,
       time
     }).safeRequestLayout({
-      nextFrame: true
-    });
+      nextFrame: !firstMount.current
+    }).then(() => firstMount.current = true);
     return () => {
       parent && parent.detach(node);
       node.unmount();

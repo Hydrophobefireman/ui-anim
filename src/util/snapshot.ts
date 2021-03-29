@@ -62,6 +62,16 @@ export function animateDelta({
   el.style.transition = "0s";
   return new Promise((resolve) => {
     const { x, y } = translateDelta;
+    if (
+      x.scale === 1 &&
+      x.translate === 0 &&
+      y.scale === 1 &&
+      y.translate === 0 &&
+      treeScale.x === 1 &&
+      treeScale.y === 1
+    ) {
+      return resolve(null); //don't waste animation frames for nothing
+    }
     animate({
       from: 0,
       to: 1,

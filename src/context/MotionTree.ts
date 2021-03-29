@@ -31,6 +31,7 @@ export class MotionTreeNode {
   }
   cancel() {
     this._cancelled = true;
+    this._isAnimating = false;
     return this;
   }
   private _config: MotionTreeConfig = {
@@ -68,15 +69,20 @@ export class MotionTreeNode {
     );
   }
   safeRequestLayout({ nextFrame }: { nextFrame?: boolean }) {
-    const fn = () =>
-      this.isReady() && !this.isAnimating() && this.requestLayout();
-    nextFrame ? requestAnimationFrame(fn) : fn();
-    return this;
+    return new Promise((resolve) => {
+      const fn = () => {
+        if (this.isReady())
+          return this.requestLayout().then(() => resolve(null));
+        resolve(null);
+      };
+      nextFrame ? requestAnimationFrame(fn) : fn();
+      return this;
+    });
   }
   requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
-    if (!existingSnapshot) return; // don't animate if we don't know where it started from
+    if (!existingSnapshot) return Promise.resolve(null); // don't animate if we don't know where it started from
 
     const delta = calcDelta(currentSnapshot, existingSnapshot);
     const mapped = this.children;
@@ -86,8 +92,7 @@ export class MotionTreeNode {
     };
 
     mapped.forEach((tree) => tree.requestLayout(nextScale, delta));
-    this.animateTreeDelta(delta, $scale, parentDelta);
-    return this;
+    return this.animateTreeDelta(delta, $scale, parentDelta);
   }
   protected animateTreeDelta(
     delta: Transform,
@@ -95,7 +100,7 @@ export class MotionTreeNode {
     parentDelta?: Transform
   ) {
     this._isAnimating = true;
-    animateDelta({
+    return animateDelta({
       el: this._config.wrappedDomNode,
       translateDelta: delta,
       time: this._config.time,
@@ -105,7 +110,6 @@ export class MotionTreeNode {
     }).then((x) => {
       this._isAnimating = false;
     });
-    return this;
   }
   setTreeState({
     wrappedDomNode,

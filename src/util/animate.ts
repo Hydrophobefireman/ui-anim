@@ -28,8 +28,8 @@ function _createAnimation(
   cancelToken: { cancelled: boolean },
   cancel: () => void
 ) {
-  if (cancelToken.cancelled) return callback(CANCELLED);
-  if (incrementValue > 0 ? from >= to : from <= to) return callback(to);
+  if (cancelToken.cancelled) return callback(CANCELLED, cancel);
+  if (incrementValue > 0 ? from >= to : from <= to) return callback(to, cancel);
   requestAnimationFrame(() =>
     _createAnimation(
       from + incrementValue,

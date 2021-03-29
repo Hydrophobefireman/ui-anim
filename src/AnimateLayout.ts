@@ -23,6 +23,7 @@ export function AnimateLayout<T extends DomElements = "div">(
 
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
+  const firstMount = useRef(false);
   useLayoutEffect(() => {
     const node = new MotionTreeNode();
     parent && parent.attach(node);
@@ -36,7 +37,8 @@ export function AnimateLayout<T extends DomElements = "div">(
         parent,
         time,
       })
-      .safeRequestLayout({ nextFrame: true });
+      .safeRequestLayout({ nextFrame: !firstMount.current })
+      .then(() => (firstMount.current = true));
     return () => {
       parent && parent.detach(node);
       node.unmount();
