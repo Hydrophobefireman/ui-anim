@@ -20,7 +20,7 @@ export function AnimateLayout<T extends DomElements = "div">(
   const { element, animId, time, ...rest } = p;
   const ref = useRef<HTMLElement>();
   const nodeRef = useRef<MotionTreeNode>();
-
+  const firstRender = useRef(false);
   const manager = useContext(MotionContext);
   const parent = useContext(TreeContext);
   const node = nodeRef.current;
@@ -30,16 +30,16 @@ export function AnimateLayout<T extends DomElements = "div">(
     parent && parent.attach(node);
     node.setManager(manager);
     if (!ref.current) return;
-    const snap = node
-      .setTreeState({
-        id: animId,
-        wrappedDomNode: ref.current,
-        parent,
-        time,
-      })
-      .getSnapshot();
+    node.setTreeState({
+      id: animId,
+      wrappedDomNode: ref.current,
+      parent,
+      time,
+    });
+
     const obj = {};
-    if (!snap) reRender(obj);
+    if (!firstRender.current) reRender(obj);
+    firstRender.current = true;
     node.safeRequestLayout(obj);
 
     return () => {

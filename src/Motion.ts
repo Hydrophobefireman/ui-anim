@@ -17,6 +17,9 @@ export class MotionManager {
   getSnapshot(id: string): Snapshot {
     return this._snapshots.get(id);
   }
+  unmount() {
+    this._snapshots.clear();
+  }
 
   public measure(id: string, e: HTMLElement) {
     const newSnapshot = snapshot(e);
@@ -28,6 +31,13 @@ export class MotionManager {
     this._snapshots.forEach((snapshot, id) => {
       const dom = this._snapshotToDomMap.get(snapshot);
       if (!dom) return;
+      if (dom && !dom.isConnected) {
+        // we don't want to keep the snapshot of a deleted element as more often than not they're
+        // going to end up animating from the top left of the screen which is absolutely not what we want
+        this._snapshots.delete(id);
+        this._snapshotToDomMap.delete(snapshot);
+        return;
+      }
       this.measure(id, dom);
     });
   }
@@ -37,7 +47,10 @@ export function Motion({ children }: any) {
   useEffect(() => {
     const l = () => manager.measureAll();
     window.addEventListener("resize", l);
-    return () => window.removeEventListener("resize", l);
+    return () => {
+      window.removeEventListener("resize", l);
+      manager.unmount();
+    };
   }, []);
   return createElement(
     MotionContext.Provider as any,

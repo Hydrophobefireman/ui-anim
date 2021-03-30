@@ -1,7 +1,7 @@
 {
   "name": "@hydrophobefireman/ui-anim",
-  "version": "0.0.3",
-  "description": "",
+  "version": "0.0.5",
+  "description": "Layout animations for UI Lib",
   "main": "dist/ui-anim.modern.js",
   "scripts": {
     "build:no-minify": "microbundle src/index.ts --compress false -o ./dist -f modern --target web --raw true  --tsconfig tsconfig.json",
@@ -30,6 +30,7 @@
     "microbundle": "^0.13.0",
     "typescript": "^4.2.3"
   },
+  "dependencies": {},
   "peerDependencies": {
     "@hydrophobefireman/ui-lib": "^1.8.7"
   }
