@@ -4,8 +4,7 @@ import { MotionTreeNode } from "./context/MotionTree";
 export interface Snapshot {
   height: number;
   width: number;
-  x: number;
-  y: number;
+
   originPoints: { x: number; y: number };
 }
 
@@ -45,6 +44,7 @@ interface AnimationProps<T = string> {
   element: T;
   animId: string;
   time?: number;
+  initialSnapshot: Snapshot;
   children?: any;
 }
 export type DomElements = keyof JSX.IntrinsicElements;
@@ -61,5 +61,6 @@ export interface AnimateDeltaProps {
   nodeInstance: MotionTreeNode;
   treeScale: { x: number; y: number };
   parentDelta?: Transform;
+  fps: number;
 }
 export {};

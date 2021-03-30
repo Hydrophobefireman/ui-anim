@@ -1,4 +1,4 @@
-import { createContext, useMemo, useEffect, createElement, useRef, useContext, useState, useLayoutEffect } from './@hydrophobefireman/ui-lib.js';
+import { createContext, useMemo, useState, useEffect, createElement, useRef, useContext, useLayoutEffect } from './@hydrophobefireman/ui-lib.js';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -62,6 +62,10 @@ function _createAnimation(from, to, incrementValue, callback, cancelToken, cance
   callback(from, cancel);
 }
 
+function getFps() {
+  return new Promise(resolve => requestAnimationFrame(t1 => requestAnimationFrame(t2 => resolve(1000 / (t2 - t1)))));
+}
+
 const freeze = "freeze" in Object ? Object.freeze : function freeze(obj) {
   return obj;
 };
@@ -85,8 +89,6 @@ function snapshot(el) {
   const {
     height,
     width,
-    x,
-    y,
     left,
     right,
     top,
@@ -99,8 +101,6 @@ function snapshot(el) {
   return freeze({
     height,
     width,
-    x: x - docSnap.left,
-    y: y - docSnap.top,
     originPoints: {
       x: interpolate(left - docSnap.left, right - (docSnap.right - offsetWidth), 0.5),
       y: interpolate(top - docSnap.top, bottom - (docSnap.bottom - offsetHeight), 0.5)
@@ -137,7 +137,8 @@ function animateDelta({
   time = 300,
   translateDelta,
   treeScale,
-  parentDelta
+  parentDelta,
+  fps = 60
 }) {
   const prev = el.style.transition;
   el.style.transition = "0s";
@@ -173,7 +174,7 @@ function animateDelta({
         }
       },
 
-      steps: time / 16
+      steps: time / (1 / fps * 1000)
     });
   }).then(() => {
     requestAnimationFrame(() => el.style.transition = prev);
@@ -184,6 +185,57 @@ function animateDelta({
 function relativeTranslate(curr, parent, scale) {
   return parent ? 0 : // ? (scale < 1 ? curr * (1 - scale) : curr - curr / scale) - parent
   curr;
+}
+
+function createSnapshot({
+  height,
+  width,
+  originX,
+  originY
+}) {
+  const {
+    innerWidth,
+    innerHeight
+  } = window;
+
+  let numHeight = _convertDimension(height, innerHeight);
+
+  let numWidth = _convertDimension(width, innerWidth);
+
+  let numOriginX = _convertCoord(originX, innerWidth / 2);
+
+  let numOriginY = _convertCoord(originY, innerHeight / 2);
+
+  return {
+    height: numHeight,
+    width: numWidth,
+    originPoints: {
+      x: numOriginX,
+      y: numOriginY
+    }
+  };
+}
+
+function _convertDimension(x, absoluteVal) {
+  return _convert(x, val => absoluteVal * (val / 100));
+}
+
+function _convertCoord(x, absoluteVal) {
+  return _convert(x, val => absoluteVal + absoluteVal * (val / 100));
+}
+
+function _convert(x, onPercent) {
+  if (typeof x == "number") return x;
+  const lastI = x.length - 1;
+  x = x.trim();
+  const isPercent = x[lastI] === "%";
+
+  if (isPercent) {
+    const rest = x.substr(0, lastI);
+    return onPercent(parseFloat(rest));
+  }
+
+  return +x;
 }
 
 const MotionContext = createContext(null);
@@ -197,18 +249,29 @@ class MotionManager {
     return this._snapshots.get(id);
   }
 
+  setFps(x) {
+    this.fps = x;
+  }
+
   unmount() {
     this._snapshots.clear();
   }
 
+  overrideSnapshot(id, e, snapshot) {
+    return this._setSnapshot(id, e, snapshot);
+  }
+
+  _setSnapshot(id, e, snapshot) {
+    this._snapshots.set(id, snapshot);
+
+    this._snapshotToDomMap.set(snapshot, e);
+
+    return snapshot;
+  }
+
   measure(id, e) {
     const newSnapshot = snapshot(e);
-
-    this._snapshots.set(id, newSnapshot);
-
-    this._snapshotToDomMap.set(newSnapshot, e);
-
-    return newSnapshot;
+    return this._setSnapshot(id, e, newSnapshot);
   }
 
   measureAll() {
@@ -218,7 +281,11 @@ class MotionManager {
       if (!dom) return;
 
       if (dom && !dom.isConnected) {
+        // we don't want to keep the snapshot of a deleted element as more often than not they're
+        // going to end up animating from the top left of the screen which is absolutely not what we want
         this._snapshots.delete(id);
+
+        this._snapshotToDomMap.delete(snapshot);
 
         return;
       }
@@ -232,6 +299,16 @@ function Motion({
   children
 }) {
   const manager = useMemo(() => new MotionManager(), []);
+  const [fps, setFps] = useState(null);
+  useEffect(() => {
+    // in case our requestAnimationFrame code does not work
+    // we do not want to end up with nothing on the screen
+    // this will probably never happen
+    // but just in case, we'd rather assume 60fps
+    // than show nothin
+    Promise.race([getFps(), new Promise(r => setTimeout(() => r(60), 1000))]).then(x => setFps(x));
+  }, []);
+  manager.setFps(fps);
   useEffect(() => {
     const l = () => manager.measureAll();
 
@@ -241,6 +318,7 @@ function Motion({
       manager.unmount();
     };
   }, []);
+  if (fps == null) return null;
   return createElement(MotionContext.Provider, {
     value: manager,
     children
@@ -295,6 +373,10 @@ class MotionTreeNode {
   unmount() {
     this._motionManager = this._config = null;
     return this;
+  }
+
+  overrideSnapshot(snap) {
+    this._motionManager.overrideSnapshot(this._config.id, this._config.wrappedDomNode, snap);
   }
 
   getSnapshot() {
@@ -361,7 +443,8 @@ class MotionTreeNode {
       time: this._config.time || DEFAULT_ANIM_TIME,
       nodeInstance: this,
       treeScale: scale,
-      parentDelta
+      parentDelta,
+      fps: this._motionManager.fps
     }).then(x => {
       this._isAnimating = false;
     });
@@ -394,9 +477,10 @@ function AnimateLayout(p) {
   const {
     element,
     animId,
-    time
+    time,
+    initialSnapshot
   } = p,
-        rest = _objectWithoutPropertiesLoose(p, ["element", "animId", "time"]);
+        rest = _objectWithoutPropertiesLoose(p, ["element", "animId", "time", "initialSnapshot"]);
 
   const ref = useRef();
   const nodeRef = useRef();
@@ -417,14 +501,19 @@ function AnimateLayout(p) {
       time
     });
     const obj = {};
-    if (!firstRender.current) reRender(obj);
+
+    if (!firstRender.current) {
+      initialSnapshot && node.overrideSnapshot(initialSnapshot);
+      reRender(obj);
+    }
+
     firstRender.current = true;
     node.safeRequestLayout(obj);
     return () => {
       parent && parent.detach(node);
       node.unmount();
     };
-  }, [ref.current, animId, time, parent, manager]);
+  }, [ref.current, animId, time, parent, manager, initialSnapshot]);
   useLayoutEffect(() => {
     ref.current && node && isIsolatedAnimation(parent) && node.safeRequestLayout({});
   });
@@ -436,5 +525,5 @@ function AnimateLayout(p) {
   }, rest)));
 }
 
-export { AnimateLayout, Motion };
+export { AnimateLayout, Motion, animate, createSnapshot, interpolate };
 //# sourceMappingURL=ui-anim.modern.js.map

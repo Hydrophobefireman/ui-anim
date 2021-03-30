@@ -9,14 +9,12 @@ export function snapshot(el: HTMLElement): Snapshot {
   el.style.transform = "";
   const snap = el.getBoundingClientRect();
   const docSnap = doc.getBoundingClientRect();
-  const { height, width, x, y, left, right, top, bottom } = snap;
+  const { height, width, left, right, top, bottom } = snap;
   const { offsetHeight, offsetWidth } = doc;
 
   return freeze({
     height,
     width,
-    x: x - docSnap.left,
-    y: y - docSnap.top,
     originPoints: {
       x: interpolate(
         left - docSnap.left,
@@ -68,6 +66,7 @@ export function animateDelta({
   translateDelta,
   treeScale,
   parentDelta,
+  fps = 60,
 }: AnimateDeltaProps) {
   const prev = el.style.transition;
   el.style.transition = "0s";
@@ -118,7 +117,7 @@ export function animateDelta({
           cancel();
         }
       },
-      steps: time / 16,
+      steps: time / ((1 / fps) * 1000),
     });
   }).then(() => {
     requestAnimationFrame(() => (el.style.transition = prev));
@@ -135,4 +134,47 @@ function relativeTranslate(
     ? 0
     : // ? (scale < 1 ? curr * (1 - scale) : curr - curr / scale) - parent
       curr;
+}
+
+export function createSnapshot({
+  height,
+  width,
+  originX,
+  originY,
+}: {
+  height: number | string;
+  width: number | string;
+  originX: number | string;
+  originY: number | string;
+}): Snapshot {
+  const { innerWidth, innerHeight } = window;
+  const numHeight = _convertDimension(height, innerHeight);
+  const numWidth = _convertDimension(width, innerWidth);
+  const numOriginX = _convertCoord(originX, innerWidth / 2);
+  const numOriginY = _convertCoord(originY, innerHeight / 2);
+  return freeze({
+    height: numHeight,
+    width: numWidth,
+    originPoints: { x: numOriginX, y: numOriginY },
+  });
+}
+
+function _convertDimension(x: string | number, absoluteVal: number) {
+  return _convert(x, (val) => absoluteVal * (val / 100));
+}
+
+function _convertCoord(x: string | number, absoluteVal: number) {
+  return _convert(x, (val) => absoluteVal + absoluteVal * (val / 100));
+}
+
+function _convert(x: string | number, onPercent: (val: number) => number) {
+  if (typeof x == "number") return x;
+  const lastI = x.length - 1;
+  x = x.trim();
+  const isPercent = x[lastI] === "%";
+  if (isPercent) {
+    const rest = x.substr(0, lastI);
+    return onPercent(parseFloat(rest));
+  }
+  return +x;
 }

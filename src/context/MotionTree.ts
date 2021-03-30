@@ -1,7 +1,7 @@
 import { createContext } from "@hydrophobefireman/ui-lib";
 import type { MotionManager } from "../Motion";
 import { animateDelta, calcDelta } from "../util/snapshot";
-import { Transform } from "../types";
+import { Snapshot, Transform } from "../types";
 import { DEFAULT_ANIM_TIME } from "../util/constants";
 export const TreeContext = createContext<MotionTreeNode>(null);
 
@@ -50,6 +50,13 @@ export class MotionTreeNode {
   unmount() {
     this._motionManager = this._config = null;
     return this;
+  }
+  overrideSnapshot(snap: Snapshot) {
+    this._motionManager.overrideSnapshot(
+      this._config.id,
+      this._config.wrappedDomNode,
+      snap
+    );
   }
   getSnapshot() {
     return this._motionManager.getSnapshot(this._config.id);
@@ -110,6 +117,7 @@ export class MotionTreeNode {
       nodeInstance: this,
       treeScale: scale,
       parentDelta,
+      fps: this._motionManager.fps,
     }).then((x) => {
       this._isAnimating = false;
     });

@@ -3,9 +3,11 @@ import {
   createElement,
   useEffect,
   useMemo,
+  useState,
 } from "@hydrophobefireman/ui-lib";
 
 import { Snapshot } from "./types";
+import { getFps } from "./util/animate";
 import { snapshot } from "./util/snapshot";
 
 export const MotionContext = createContext<MotionManager>(null);
@@ -13,19 +15,27 @@ export const MotionContext = createContext<MotionManager>(null);
 export class MotionManager {
   private _snapshots: Map<string, Snapshot> = new Map();
   private _snapshotToDomMap = new WeakMap<Snapshot, HTMLElement>();
-
+  public fps: number;
   getSnapshot(id: string): Snapshot {
     return this._snapshots.get(id);
+  }
+  setFps(x: number) {
+    this.fps = x;
   }
   unmount() {
     this._snapshots.clear();
   }
-
+  overrideSnapshot(id: string, e: HTMLElement, snapshot: Snapshot) {
+    return this._setSnapshot(id, e, snapshot);
+  }
+  _setSnapshot(id: string, e: HTMLElement, snapshot: Snapshot) {
+    this._snapshots.set(id, snapshot);
+    this._snapshotToDomMap.set(snapshot, e);
+    return snapshot;
+  }
   public measure(id: string, e: HTMLElement) {
     const newSnapshot = snapshot(e);
-    this._snapshots.set(id, newSnapshot);
-    this._snapshotToDomMap.set(newSnapshot, e);
-    return newSnapshot;
+    return this._setSnapshot(id, e, newSnapshot);
   }
   public measureAll() {
     this._snapshots.forEach((snapshot, id) => {
@@ -44,6 +54,20 @@ export class MotionManager {
 }
 export function Motion({ children }: any) {
   const manager = useMemo(() => new MotionManager(), []);
+  const [fps, setFps] = useState(null);
+  useEffect(() => {
+    // in case our requestAnimationFrame code does not work
+    // we do not want to end up with nothing on the screen
+    // this will probably never happen
+    // but just in case, we'd rather assume 60fps
+    // than show nothin
+    Promise.race([
+      getFps(),
+      new Promise((r) => setTimeout(() => r(60), 1000)),
+    ]).then((x) => setFps(x));
+  }, []);
+  manager.setFps(fps);
+
   useEffect(() => {
     const l = () => manager.measureAll();
     window.addEventListener("resize", l);
@@ -52,6 +76,7 @@ export function Motion({ children }: any) {
       manager.unmount();
     };
   }, []);
+  if (fps == null) return null;
   return createElement(
     MotionContext.Provider as any,
     {
