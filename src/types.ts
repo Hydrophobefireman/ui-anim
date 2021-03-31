@@ -44,7 +44,7 @@ interface AnimationProps<T = string> {
   element: T;
   animId: string;
   time?: number;
-  initialSnapshot: Snapshot;
+  initialSnapshot?: Snapshot;
   children?: any;
 }
 export type DomElements = keyof JSX.IntrinsicElements;
