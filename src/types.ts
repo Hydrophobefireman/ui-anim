@@ -1,4 +1,3 @@
-import { ComponentType } from "@hydrophobefireman/ui-lib";
 import { MotionTreeNode } from "./context/MotionTree";
 
 export interface Snapshot {
@@ -11,8 +10,6 @@ export interface Snapshot {
 export interface Transform {
   x: AxisTransform;
   y: AxisTransform;
-  currWidth: number;
-  currHeight: number;
 }
 
 export interface CSSTransform {

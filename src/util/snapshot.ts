@@ -1,7 +1,9 @@
 import { AnimateDeltaProps, Snapshot, Transform } from "../types";
 import { animate, CANCELLED, interpolate } from "./animate";
 import { freeze } from "./freeze";
+import { DeclarativeTransform } from "./declarative-transform";
 import { applyTransform } from "./transform";
+import { convertCoord, convertDimension } from "./converters";
 
 const doc = document.documentElement;
 
@@ -32,29 +34,46 @@ export function snapshot(el: HTMLElement): Snapshot {
 
 export function calcDelta(
   currentSnapshot: Snapshot,
-  previousSnapshot: Snapshot
+  previousSnapshot: Snapshot | DeclarativeTransform
 ): Transform {
-  const {
-    originPoints: prevOriginPoints,
-    width: prevWidth,
-    height: prevHeight,
-  } = previousSnapshot;
   const {
     originPoints: currOriginPoints,
     width: currWidth,
     height: currHeight,
   } = currentSnapshot;
-
+  if (previousSnapshot instanceof DeclarativeTransform) {
+    const { snap } = previousSnapshot;
+    const { scaleX, scaleY, translateX, translateY } = snap;
+    return {
+      x: {
+        translate: translateX == null ? 0 : translateX,
+        scale: scaleX == null ? 1 : scaleX,
+      },
+      y: {
+        translate: translateY == null ? 0 : translateY,
+        scale: scaleY == null ? 1 : scaleY,
+      },
+    };
+  }
+  const {
+    originPoints: prevOriginPoints,
+    width: prevWidth,
+    height: prevHeight,
+  } = previousSnapshot;
   return {
-    currWidth,
-    currHeight,
     x: {
-      translate: prevOriginPoints.x - currOriginPoints.x,
-      scale: prevWidth / currWidth,
+      translate:
+        prevOriginPoints.x == null
+          ? 0
+          : prevOriginPoints.x - currOriginPoints.x,
+      scale: prevWidth == null ? 1 : prevWidth / currWidth,
     },
     y: {
-      translate: prevOriginPoints.y - currOriginPoints.y,
-      scale: prevHeight / currHeight,
+      translate:
+        prevOriginPoints.y == null
+          ? 0
+          : prevOriginPoints.y - currOriginPoints.y,
+      scale: prevHeight == null ? 1 : prevHeight / currHeight,
     },
   };
 }
@@ -87,6 +106,10 @@ export function animateDelta({
       to: 1,
       callback(progress: number, cancel) {
         if (progress === CANCELLED) return resolve(null);
+        if (progress === 1) {
+          el.style.transform = "";
+          return resolve(null);
+        }
         const scaleX = x.scale / treeScale.x;
         const scaleY = y.scale / treeScale.y;
         const transform = {
@@ -112,7 +135,6 @@ export function animateDelta({
           ),
         };
         applyTransform(el, transform);
-        if (progress === 1) resolve(null);
         if (nodeInstance.isCancelled()) {
           cancel();
         }
@@ -142,39 +164,19 @@ export function createSnapshot({
   originX,
   originY,
 }: {
-  height: number | string;
-  width: number | string;
-  originX: number | string;
-  originY: number | string;
+  height?: number | string;
+  width?: number | string;
+  originX?: number | string;
+  originY?: number | string;
 }): Snapshot {
   const { innerWidth, innerHeight } = window;
-  const numHeight = _convertDimension(height, innerHeight);
-  const numWidth = _convertDimension(width, innerWidth);
-  const numOriginX = _convertCoord(originX, innerWidth / 2);
-  const numOriginY = _convertCoord(originY, innerHeight / 2);
+  const numHeight = convertDimension(height, innerHeight);
+  const numWidth = convertDimension(width, innerWidth);
+  const numOriginX = convertCoord(originX, innerWidth / 2);
+  const numOriginY = convertCoord(originY, innerHeight / 2);
   return freeze({
     height: numHeight,
     width: numWidth,
     originPoints: { x: numOriginX, y: numOriginY },
   });
-}
-
-function _convertDimension(x: string | number, absoluteVal: number) {
-  return _convert(x, (val) => absoluteVal * (val / 100));
-}
-
-function _convertCoord(x: string | number, absoluteVal: number) {
-  return _convert(x, (val) => absoluteVal + absoluteVal * (val / 100));
-}
-
-function _convert(x: string | number, onPercent: (val: number) => number) {
-  if (typeof x == "number") return x;
-  const lastI = x.length - 1;
-  x = x.trim();
-  const isPercent = x[lastI] === "%";
-  if (isPercent) {
-    const rest = x.substr(0, lastI);
-    return onPercent(parseFloat(rest));
-  }
-  return +x;
 }

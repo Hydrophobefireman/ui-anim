@@ -1,6 +1,6 @@
 {
   "name": "@hydrophobefireman/ui-anim",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Layout animations for UI Lib",
   "main": "dist/ui-anim.modern.js",
   "scripts": {
