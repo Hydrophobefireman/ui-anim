@@ -1,5 +1,5 @@
 import { CSSTransform } from "../types";
 
 export class DeclarativeTransform {
-  constructor(public snap: CSSTransform) {}
+  constructor(public snap: Partial<CSSTransform>) {}
 }

@@ -8,6 +8,7 @@ import {
 
 import { Snapshot } from "./types";
 import { getFps } from "./util/animate";
+import { DeclarativeTransform } from "./util/declarative-transform";
 import { snapshot } from "./util/snapshot";
 
 export const MotionContext = createContext<MotionManager>(null);
@@ -17,7 +18,7 @@ export class MotionManager {
   private _snapshotToDomMap = new WeakMap<Snapshot, HTMLElement>();
   public fps: number;
   getSnapshot(id: string): Snapshot {
-    return this._snapshots.get(id);
+    return this._snapshots.get(id) as Snapshot;
   }
   setFps(x: number) {
     this.fps = x;

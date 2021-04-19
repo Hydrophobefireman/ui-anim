@@ -3,6 +3,7 @@ import type { MotionManager } from "../Motion";
 import { animateDelta, calcDelta } from "../util/snapshot";
 import { Snapshot, Transform } from "../types";
 import { DEFAULT_ANIM_TIME } from "../util/constants";
+import { DeclarativeTransform } from "../util/declarative-transform";
 export const TreeContext = createContext<MotionTreeNode>(null);
 
 interface MotionTreeConfig {

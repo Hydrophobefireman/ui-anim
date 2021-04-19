@@ -1,4 +1,5 @@
 import { MotionTreeNode } from "./context/MotionTree";
+import { DeclarativeTransform } from "./util/declarative-transform";
 
 export interface Snapshot {
   height: number;
@@ -41,7 +42,7 @@ interface AnimationProps<T = string> {
   element: T;
   animId: string;
   time?: number;
-  initialSnapshot?: Snapshot;
+  initialSnapshot?: Snapshot | DeclarativeTransform;
   children?: any;
 }
 export type DomElements = keyof JSX.IntrinsicElements;

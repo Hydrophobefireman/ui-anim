@@ -39,7 +39,7 @@ export function AnimateLayout<T extends DomElements = "div">(
 
     const obj = {};
     if (!firstRender.current) {
-      initialSnapshot && node.overrideSnapshot(initialSnapshot);
+      initialSnapshot && node.overrideSnapshot(initialSnapshot as Snapshot);
       reRender(obj);
     }
 
