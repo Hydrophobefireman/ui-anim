@@ -17,7 +17,7 @@ function isIsolatedAnimation(parent: MotionTreeNode) {
 export function AnimateLayout<T extends DomElements = "div">(
   p: AnimateLayoutProps<T>
 ): JSX.Element {
-  const { element, animId, time, initialSnapshot, ...rest } = p;
+  const { element, animId, time, initialSnapshot, onlyInitial, ...rest } = p;
   const ref = useRef<HTMLElement>();
   const nodeRef = useRef<MotionTreeNode>();
   const firstRender = useRef(false);
@@ -52,7 +52,8 @@ export function AnimateLayout<T extends DomElements = "div">(
     };
   }, [ref.current, animId, time, parent, manager, initialSnapshot]);
   useLayoutEffect(() => {
-    ref.current &&
+    !onlyInitial &&
+      ref.current &&
       node &&
       isIsolatedAnimation(parent) &&
       node.safeRequestLayout({});
