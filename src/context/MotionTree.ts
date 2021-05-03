@@ -1,9 +1,10 @@
-import { createContext } from "@hydrophobefireman/ui-lib";
-import type { MotionManager } from "../Motion";
+import { CSSTransform, OnlyAnimate, Snapshot, Transform } from "../types";
 import { animateDelta, calcDelta } from "../util/snapshot";
-import { Snapshot, Transform } from "../types";
+
 import { DEFAULT_ANIM_TIME } from "../util/constants";
-import { DeclarativeTransform } from "../util/declarative-transform";
+import type { MotionManager } from "../Motion";
+import { createContext } from "@hydrophobefireman/ui-lib";
+
 export const TreeContext = createContext<MotionTreeNode>(null);
 
 interface MotionTreeConfig {
@@ -12,6 +13,7 @@ interface MotionTreeConfig {
   time: number;
   isRoot: boolean;
   parent: MotionTreeNode | null;
+  onlyAnimate?: OnlyAnimate;
 }
 export class MotionTreeNode {
   protected children = new Set<MotionTreeNode>();
@@ -119,6 +121,7 @@ export class MotionTreeNode {
       treeScale: scale,
       parentDelta,
       fps: this._motionManager.fps,
+      onlyAnimate: this._config.onlyAnimate,
     }).then((x) => {
       this._isAnimating = false;
     });
@@ -126,11 +129,12 @@ export class MotionTreeNode {
   setTreeState({
     wrappedDomNode,
     time,
+    onlyAnimate,
     id,
     parent,
   }: Omit<MotionTreeConfig, "isRoot">) {
     const isRoot = parent == null;
-    this._config = { wrappedDomNode, time, id, isRoot, parent };
+    this._config = { wrappedDomNode, time, id, isRoot, parent, onlyAnimate };
     return this;
   }
 }

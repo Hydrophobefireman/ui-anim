@@ -1,9 +1,10 @@
-import { AnimateDeltaProps, Snapshot, Transform } from "../types";
-import { animate, CANCELLED, interpolate } from "./animate";
-import { freeze } from "./freeze";
+import { AnimateDeltaProps, OnlyAnimate, Snapshot, Transform } from "../types";
+import { CANCELLED, animate, interpolate } from "./animate";
+import { convertCoord, convertDimension } from "./converters";
+
 import { DeclarativeTransform } from "./declarative-transform";
 import { applyTransform } from "./transform";
-import { convertCoord, convertDimension } from "./converters";
+import { freeze } from "./freeze";
 
 const doc = document.documentElement;
 
@@ -86,6 +87,7 @@ export function animateDelta({
   treeScale,
   parentDelta,
   fps = 60,
+  onlyAnimate,
 }: AnimateDeltaProps) {
   const prev = el.style.transition;
   el.style.transition = "0s";
@@ -101,6 +103,27 @@ export function animateDelta({
     ) {
       return resolve(null); //don't waste animation frames for nothing
     }
+    const getAnim = shouldAnimate(onlyAnimate);
+    const scaleX = getAnim("scaleX", x.scale / treeScale.x, 1);
+    const scaleY = getAnim("scaleY", y.scale / treeScale.y, 1);
+    const relativeXTranslate = getAnim(
+      "translateX",
+      relativeTranslate(
+        x.translate,
+        parentDelta && parentDelta.x.translate,
+        scaleX
+      ),
+      0
+    );
+    const relativeYTranslate = getAnim(
+      "translateY",
+      relativeTranslate(
+        y.translate,
+        parentDelta && parentDelta.y.translate,
+        scaleY
+      ),
+      0
+    );
     animate({
       from: 0,
       to: 1,
@@ -110,29 +133,11 @@ export function animateDelta({
           el.style.transform = "";
           return resolve(null);
         }
-        const scaleX = x.scale / treeScale.x;
-        const scaleY = y.scale / treeScale.y;
         const transform = {
           scaleX: interpolate(scaleX, 1, progress),
           scaleY: interpolate(scaleY, 1, progress),
-          translateX: interpolate(
-            relativeTranslate(
-              x.translate,
-              parentDelta && parentDelta.x.translate,
-              scaleX
-            ),
-            0,
-            progress
-          ),
-          translateY: interpolate(
-            relativeTranslate(
-              y.translate,
-              parentDelta && parentDelta.y.translate,
-              scaleY
-            ),
-            0,
-            progress
-          ),
+          translateX: interpolate(relativeXTranslate, 0, progress),
+          translateY: interpolate(relativeYTranslate, 0, progress),
         };
         applyTransform(el, transform);
         if (nodeInstance.isCancelled()) {
@@ -179,4 +184,15 @@ export function createSnapshot({
     width: numWidth,
     originPoints: { x: numOriginX, y: numOriginY },
   });
+}
+
+function shouldAnimate(onlyAnimate: OnlyAnimate) {
+  return function (
+    prop: keyof OnlyAnimate,
+    value: number,
+    defaultValue: number
+  ) {
+    if (onlyAnimate == null) return value;
+    return onlyAnimate[prop] ? value : defaultValue;
+  };
 }

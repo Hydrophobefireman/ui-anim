@@ -1,5 +1,5 @@
-import { MotionTreeNode } from "./context/MotionTree";
 import { DeclarativeTransform } from "./util/declarative-transform";
+import { MotionTreeNode } from "./context/MotionTree";
 
 export interface Snapshot {
   height: number;
@@ -45,6 +45,7 @@ interface AnimationProps<T = string> {
   initialSnapshot?: Snapshot | DeclarativeTransform;
   children?: any;
   onlyInitial?: boolean;
+  onlyAnimate?: OnlyAnimate;
 }
 export type DomElements = keyof JSX.IntrinsicElements;
 
@@ -61,5 +62,7 @@ export interface AnimateDeltaProps {
   treeScale: { x: number; y: number };
   parentDelta?: Transform;
   fps: number;
+  onlyAnimate: OnlyAnimate;
 }
+export type OnlyAnimate = Partial<Record<keyof CSSTransform, boolean>>;
 export {};

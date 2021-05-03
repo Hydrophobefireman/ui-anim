@@ -1,3 +1,5 @@
+import { AnimateLayoutProps, DomElements, Snapshot } from "./types";
+import { MotionTreeNode, TreeContext } from "./context/MotionTree";
 import {
   createElement,
   useContext,
@@ -6,9 +8,8 @@ import {
   useRef,
   useState,
 } from "@hydrophobefireman/ui-lib";
-import { AnimateLayoutProps, DomElements, Snapshot } from "./types";
+
 import { MotionContext } from "./Motion";
-import { MotionTreeNode, TreeContext } from "./context/MotionTree";
 
 function isIsolatedAnimation(parent: MotionTreeNode) {
   return !parent || !parent.isAnimating();
@@ -17,7 +18,15 @@ function isIsolatedAnimation(parent: MotionTreeNode) {
 export function AnimateLayout<T extends DomElements = "div">(
   p: AnimateLayoutProps<T>
 ): JSX.Element {
-  const { element, animId, time, initialSnapshot, onlyInitial, ...rest } = p;
+  const {
+    element,
+    animId,
+    time,
+    initialSnapshot,
+    onlyInitial,
+    onlyAnimate,
+    ...rest
+  } = p;
   const ref = useRef<HTMLElement>();
   const nodeRef = useRef<MotionTreeNode>();
   const firstRender = useRef(false);
@@ -35,6 +44,7 @@ export function AnimateLayout<T extends DomElements = "div">(
       wrappedDomNode: ref.current,
       parent,
       time,
+      onlyAnimate,
     });
 
     const obj = {};
@@ -50,7 +60,15 @@ export function AnimateLayout<T extends DomElements = "div">(
       parent && parent.detach(node);
       node.unmount();
     };
-  }, [ref.current, animId, time, parent, manager, initialSnapshot]);
+  }, [
+    ref.current,
+    animId,
+    time,
+    parent,
+    manager,
+    initialSnapshot,
+    onlyAnimate,
+  ]);
   useLayoutEffect(() => {
     !onlyInitial &&
       ref.current &&

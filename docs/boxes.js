@@ -1,5 +1,5 @@
-import { render, useState, h } from "./@hydrophobefireman/ui-lib.js";
 import { AnimateLayout, Motion } from "./anim.js";
+import { h, render, useState } from "./@hydrophobefireman/ui-lib.js";
 
 const getList = (x) => Array.from({ length: x }).map((_, i) => i);
 function App() {
@@ -30,6 +30,7 @@ function App() {
         h(
           AnimateLayout,
           {
+            // onlyAnimate: { scaleX: true, scaleY: false },
             time,
             element: "div",
             animId: `${count - i}`,
