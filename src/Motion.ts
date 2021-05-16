@@ -8,7 +8,6 @@ import {
 
 import { Snapshot } from "./types";
 import { getFps } from "./util/animate";
-import { DeclarativeTransform } from "./util/declarative-transform";
 import { snapshot } from "./util/snapshot";
 
 export const MotionContext = createContext<MotionManager>(null);
@@ -61,7 +60,7 @@ export function Motion({ children }: any) {
     // we do not want to end up with nothing on the screen
     // this will probably never happen
     // but just in case, we'd rather assume 60fps
-    // than show nothin
+    // than show nothing
     Promise.race([
       getFps(),
       new Promise((r) => setTimeout(() => r(60), 1000)),
@@ -71,7 +70,7 @@ export function Motion({ children }: any) {
 
   useEffect(() => {
     const l = () => manager.measureAll();
-    window.addEventListener("resize", l);
+    window.addEventListener("resize", l, { passive: true });
     return () => {
       window.removeEventListener("resize", l);
       manager.unmount();
