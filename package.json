@@ -1,37 +1,47 @@
 {
-  "name": "@hydrophobefireman/ui-anim",
-  "version": "0.0.14",
-  "description": "Layout animations for UI Lib",
-  "main": "dist/ui-anim.modern.js",
-  "scripts": {
-    "build:no-minify": "microbundle src/index.ts --compress false -o ./dist -f modern --target web --raw true  --tsconfig tsconfig.json",
-    "build:minify": "microbundle src/index.ts -o ./dist -f modern,umd --target web --raw true  --tsconfig tsconfig.json",
-    "dev": "microbundle watch src/index.ts -o ./dist -f modern --raw  true --target web --tsconfig tsconfig.json",
-    "prebuild": "node scripts/prebuild.js",
-    "build": "npm run build:minify",
-    "output": "npm run build:no-minify",
-    "postbuild": "node scripts/to-docs.js",
-    "output:docs": "npm run output && npm run postbuild",
-    "build:docs": "npm run build"
-  },
+  "name": "@hydrophobefireman/ui-lib",
+  "description": "",
+  "types": "dist/src/index.d.ts",
+  "version": "0.0.3-11-11-2021-22-18",
+  "license": "MIT",
+  "type": "module",
+  "homepage": "https://github.com/@hydrophobefireman/@hydrophobefireman/ui-lib#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Hydrophobefireman/ui-anim.git"
+    "url": "git+https://github.com/@hydrophobefireman/@hydrophobefireman/ui-lib.git"
   },
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Hydrophobefireman/ui-anim/issues"
+  "main": "dist/src/index.js",
+  "module": "dist/src/index.js",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./package.json": "./package.json"
   },
-  "module": "dist/ui-anim.modern.js",
-  "types": "dist/index.d.ts",
+  "scripts": {
+    "prebuild": "node scripts/clean.cjs",
+    "prepublishOnly": "npm run build &&  node scripts/prepublishOnly.cjs",
+    "postpublish": "node scripts/postpublish.cjs",
+    "postbuild": "node scripts/postbuild.cjs",
+    "create-package": "node scripts/create-package.cjs",
+    "build": "tsc",
+    "prepare": "husky install"
+  },
   "sideEffects": false,
-  "homepage": "https://github.com/Hydrophobefireman/ui-anim#readme",
-  "devDependencies": {
-    "microbundle": "^0.13.3",
-    "typescript": "^4.3.2"
-  },
   "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "husky": "^8.0.3",
+    "prettier": "^2.8.2",
+    "pretty-quick": "^3.1.3",
+    "typescript": "^4.9.4"
+  },
   "peerDependencies": {
-    "@hydrophobefireman/ui-lib": "^1.9.9"
-  }
+    "@hydrophobefireman/ui-lib": "latest"
+  },
+  "libBase": {
+    "exports": {
+      ".": "./dist/src/index.js",
+      "./package.json": "./package.json"
+    }
+  },
+  "libPackages": []
 }
