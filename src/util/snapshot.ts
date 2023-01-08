@@ -1,10 +1,9 @@
-import { AnimateDeltaProps, OnlyAnimate, Snapshot, Transform } from "../types";
-import { CANCELLED, animate, interpolate } from "./animate";
-import { convertCoord, convertDimension } from "./converters";
-
-import { DeclarativeTransform } from "./declarative-transform";
-import { applyTransform } from "./transform";
-import { freeze } from "./freeze";
+import {AnimateDeltaProps, OnlyAnimate, Snapshot, Transform} from "../types.js";
+import {CANCELLED, animate, interpolate} from "./animate.js";
+import {convertCoord, convertDimension} from "./converters.js";
+import {DeclarativeTransform} from "./declarative-transform.js";
+import {freeze} from "./freeze.js";
+import {applyTransform} from "./transform.js";
 
 const doc = document.documentElement;
 
@@ -12,8 +11,8 @@ export function snapshot(el: HTMLElement): Snapshot {
   el.style.transform = "";
   const snap = el.getBoundingClientRect();
   const docSnap = doc.getBoundingClientRect();
-  const { height, width, left, right, top, bottom } = snap;
-  const { offsetHeight, offsetWidth } = doc;
+  const {height, width, left, right, top, bottom} = snap;
+  const {offsetHeight, offsetWidth} = doc;
 
   return freeze({
     height,
@@ -43,8 +42,8 @@ export function calcDelta(
     height: currHeight,
   } = currentSnapshot;
   if (previousSnapshot instanceof DeclarativeTransform) {
-    const { snap } = previousSnapshot;
-    const { scaleX, scaleY, translateX, translateY } = snap;
+    const {snap} = previousSnapshot;
+    const {scaleX, scaleY, translateX, translateY} = snap;
     return {
       x: {
         translate: translateX == null ? 0 : translateX,
@@ -92,7 +91,7 @@ export function animateDelta({
   const prev = el.style.transition;
   el.style.transition = "0s";
   return new Promise((resolve) => {
-    const { x, y } = translateDelta;
+    const {x, y} = translateDelta;
     if (
       x.scale === 1 &&
       x.translate === 0 &&
@@ -174,7 +173,7 @@ export function createSnapshot({
   originX?: number | string;
   originY?: number | string;
 }): Snapshot {
-  const { innerWidth, innerHeight } = window;
+  const {innerWidth, innerHeight} = window;
   const numHeight = convertDimension(height, innerHeight);
   const numWidth = convertDimension(width, innerWidth);
   const numOriginX = convertCoord(originX, innerWidth / 2);
@@ -182,7 +181,7 @@ export function createSnapshot({
   return freeze({
     height: numHeight,
     width: numWidth,
-    originPoints: { x: numOriginX, y: numOriginY },
+    originPoints: {x: numOriginX, y: numOriginY},
   });
 }
 

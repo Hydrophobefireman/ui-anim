@@ -2,7 +2,7 @@
   "name": "@hydrophobefireman/ui-anim",
   "description": "",
   "types": "dist/src/index.d.ts",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "license": "MIT",
   "type": "module",
   "homepage": "https://github.com/@hydrophobefireman/@hydrophobefireman/ui-anim#readme",

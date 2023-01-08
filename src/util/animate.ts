@@ -1,8 +1,8 @@
-import { AnimateOptions } from "../types";
+import {AnimateOptions} from "../types.js";
 export const CANCELLED = {};
-export function animate({ from, to, callback, steps }: AnimateOptions) {
+export function animate({from, to, callback, steps}: AnimateOptions) {
   const incrementValue = (to - from) / steps;
-  const cancelToken = { cancelled: false };
+  const cancelToken = {cancelled: false};
   function cancel() {
     cancelToken.cancelled = true;
   }
@@ -25,7 +25,7 @@ function _createAnimation(
   to: number,
   incrementValue: number,
   callback: AnimateOptions["callback"],
-  cancelToken: { cancelled: boolean },
+  cancelToken: {cancelled: boolean},
   cancel: () => void
 ) {
   if (cancelToken.cancelled) return callback(CANCELLED, cancel);

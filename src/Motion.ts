@@ -6,9 +6,9 @@ import {
   useState,
 } from "@hydrophobefireman/ui-lib";
 
-import { Snapshot } from "./types";
-import { getFps } from "./util/animate";
-import { snapshot } from "./util/snapshot";
+import {Snapshot} from "./types.js";
+import {getFps} from "./util/animate.js";
+import {snapshot} from "./util/snapshot.js";
 
 export const MotionContext = createContext<MotionManager>(null);
 
@@ -52,7 +52,7 @@ export class MotionManager {
     });
   }
 }
-export function Motion({ children }: any) {
+export function Motion({children}: any) {
   const manager = useMemo(() => new MotionManager(), []);
   const [fps, setFps] = useState(null);
   useEffect(() => {
@@ -70,7 +70,7 @@ export function Motion({ children }: any) {
 
   useEffect(() => {
     const l = () => manager.measureAll();
-    window.addEventListener("resize", l, { passive: true });
+    window.addEventListener("resize", l, {passive: true});
     return () => {
       window.removeEventListener("resize", l);
       manager.unmount();

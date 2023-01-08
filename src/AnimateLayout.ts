@@ -1,5 +1,3 @@
-import { AnimateLayoutProps, DomElements, Snapshot } from "./types";
-import { MotionTreeNode, TreeContext } from "./context/MotionTree";
 import {
   createElement,
   useContext,
@@ -9,7 +7,9 @@ import {
   useState,
 } from "@hydrophobefireman/ui-lib";
 
-import { MotionContext } from "./Motion";
+import {MotionContext} from "./Motion.js";
+import {MotionTreeNode, TreeContext} from "./context/MotionTree.js";
+import {AnimateLayoutProps, DomElements, Snapshot} from "./types.js";
 
 function isIsolatedAnimation(parent: MotionTreeNode) {
   return !parent || !parent.isAnimating();
@@ -79,7 +79,7 @@ export function AnimateLayout<T extends DomElements = "div">(
   useEffect(() => () => node && node.cancel().unmount(), [node]);
   return createElement(
     TreeContext.Provider as any,
-    { value: node as any },
-    createElement(element, { ref, ...rest })
+    {value: node as any},
+    createElement(element, {ref, ...rest})
   );
 }

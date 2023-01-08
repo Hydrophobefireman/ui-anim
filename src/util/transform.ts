@@ -1,4 +1,4 @@
-import { CSSTransform, Transform } from "../types";
+import {CSSTransform} from "../types.js";
 
 export function applyTransform(el: HTMLElement, transform: CSSTransform) {
   el.style.transform = `
@@ -10,5 +10,5 @@ export function applyTransform(el: HTMLElement, transform: CSSTransform) {
 
 // export function applyBorderRadius(el: HTMLElement, t: Transform) {
 //   const { currHeight, currWidth } = t;
-//   const currRadius 
+//   const currRadius
 // }

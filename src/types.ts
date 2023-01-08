@@ -1,11 +1,11 @@
-import { DeclarativeTransform } from "./util/declarative-transform";
-import { MotionTreeNode } from "./context/MotionTree";
+import {MotionTreeNode} from "./context/MotionTree.js";
+import {DeclarativeTransform} from "./util/declarative-transform.js";
 
 export interface Snapshot {
   height: number;
   width: number;
 
-  originPoints: { x: number; y: number };
+  originPoints: {x: number; y: number};
 }
 
 export interface Transform {
@@ -59,7 +59,7 @@ export interface AnimateDeltaProps {
   translateDelta: Transform;
   time: number;
   nodeInstance: MotionTreeNode;
-  treeScale: { x: number; y: number };
+  treeScale: {x: number; y: number};
   parentDelta?: Transform;
   fps: number;
   onlyAnimate: OnlyAnimate;

@@ -1,9 +1,9 @@
-import { CSSTransform, OnlyAnimate, Snapshot, Transform } from "../types";
-import { animateDelta, calcDelta } from "../util/snapshot";
+import {createContext} from "@hydrophobefireman/ui-lib";
 
-import { DEFAULT_ANIM_TIME } from "../util/constants";
-import type { MotionManager } from "../Motion";
-import { createContext } from "@hydrophobefireman/ui-lib";
+import type {MotionManager} from "../Motion.js";
+import {OnlyAnimate, Snapshot, Transform} from "../types.js";
+import {DEFAULT_ANIM_TIME} from "../util/constants.js";
+import {animateDelta, calcDelta} from "../util/snapshot.js";
 
 export const TreeContext = createContext<MotionTreeNode>(null);
 
@@ -78,7 +78,7 @@ export class MotionTreeNode {
       this._config.wrappedDomNode
     );
   }
-  safeRequestLayout({ nextFrame }: { nextFrame?: boolean }) {
+  safeRequestLayout({nextFrame}: {nextFrame?: boolean}) {
     return new Promise((resolve) => {
       const fn = () => {
         if (this.isReady())
@@ -89,7 +89,7 @@ export class MotionTreeNode {
       return this;
     });
   }
-  requestLayout($scale = { x: 1, y: 1 }, parentDelta?: Transform) {
+  requestLayout($scale = {x: 1, y: 1}, parentDelta?: Transform) {
     this._reset();
     const existingSnapshot = this.getSnapshot();
     const currentSnapshot = this.measure();
@@ -108,7 +108,7 @@ export class MotionTreeNode {
   }
   protected animateTreeDelta(
     delta: Transform,
-    scale = { x: 1, y: 1 },
+    scale = {x: 1, y: 1},
     parentDelta?: Transform
   ) {
     this._isAnimating = true;
@@ -134,7 +134,7 @@ export class MotionTreeNode {
     parent,
   }: Omit<MotionTreeConfig, "isRoot">) {
     const isRoot = parent == null;
-    this._config = { wrappedDomNode, time, id, isRoot, parent, onlyAnimate };
+    this._config = {wrappedDomNode, time, id, isRoot, parent, onlyAnimate};
     return this;
   }
 }
